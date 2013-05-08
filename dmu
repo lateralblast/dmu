@@ -181,7 +181,7 @@ use Net::FTP;
 
 # Initialise global variables
 
-my $version_no="1.48";
+my $version_no="1.4.7";
 my $script_name="dmu"; my %option; my $verbose=0; 
 my $temp_dir="/var/$script_name"; my $file_system; 
 my $zone_name; my $date_file; my @change_log; 
