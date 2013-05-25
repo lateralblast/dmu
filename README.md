@@ -12,6 +12,22 @@ Supports multiple mirroring types and controllers in the same machine.
 
 Supports reporting via email and syslog.
 
+Supports the following software and hardware based mirroring:
+
+* Solaris Volume Manager
+* Veritas Volume Manager
+* Solaris Zpool
+* Solaris raidctl
+* Linux software mirroring
+* Linux IBM ServeRAID 4lx, 4mx, 5i, 6i, 7, 7k, 8i
+* Linux LSI MegaRAID SAS
+* Linux Adaptec RAID Controllers
+* FreeBSD LSI
+* Linux Dynapath
+* Linux DAC960
+* Linux LSI SASx36
+* Linux PERC H700
+
 Usage
 -----
 
