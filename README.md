@@ -16,13 +16,14 @@ Supports the following software and hardware based mirroring:
 
 * Solaris Volume Manager
 * Veritas Volume Manager
-* Solaris Zpool
+* Solaris zpool
 * Solaris raidctl
 * Linux software mirroring
 * Linux IBM ServeRAID 4lx, 4mx, 5i, 6i, 7, 7k, 8i
 * Linux LSI MegaRAID SAS
 * Linux Adaptec RAID Controllers
 * FreeBSD LSI
+* FreeBSD raidctl
 * Linux Dynapath
 * Linux DAC960
 * Linux LSI SASx36
