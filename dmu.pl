@@ -32,7 +32,7 @@ use Net::FTP;
 
 # Initialise global variables
 
-my $version_no="1.4.7";
+my $version_no="1.4.8";
 my $script_name="dmu"; 
 my %option; 
 my $verbose=0; 
