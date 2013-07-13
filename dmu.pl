@@ -29,20 +29,19 @@
 use strict;
 use Getopt::Std;
 use Net::FTP;
+use File::Basename;
+use Cwd;
 
 # Initialise global variables
 
-my $version_no="1.4.8";
-my $script_name="dmu"; 
 my %option; 
 my $verbose=0; 
-my $temp_dir="/var/$script_name"; 
 my $file_system; 
 my $zone_name; 
 my $date_file; 
 my @change_log; 
+my $tools_dir;
 my $coder_email="richard\@lateralblast.com.au";
-my $output="$temp_dir/$script_name.log"; 
 my $report_email="Report.Receiver\@vendor.com";
 my $disk_slice; 
 my $marker=0; 
@@ -78,37 +77,32 @@ my $lsi_test=0;
 my $zfs_test; 
 my $errors=0; 
 my $email_address;
-my $update_server="updateserver.vendor.com"; 
 my $command_line; 
 my $date_no; 
 my $version_file;
 my $dynapath_test=0; 
 my @dynapath_info;
 my $dynapath_command="/usr/local/dynapath/bin/dpcli";
-my $monitor_user="nimsoft";
-my $monitor_uid="";
-my $monitor_gid="";
-my $monitor_gcos="";
 my $file_slurp=0;
-my $pod_exe;
-
-# By default set network update to off
-
-$option{'n'}=1;
+my $script_info;
+my $version_info;
+my $packager_info;
+my $vendor_info;
+my $script_name=$0;
+my @script_file;
+my $temp_dir;
+my $output;
 
 chomp($os_version);
 
-# Add handling for being run as mdcheck
+# Check local configuration
 
-if ($script_file=~/mdcheck/) {
-  $temp_dir="/var/log/mdcheck";
-}
-
-$version_file="$temp_dir/$script_name.version"; 
+check_local_config();
+check_file_slurp();
 
 # Get command line options
 
-getopts("cfhlk:mnstvAFPVd:",\%option);
+getopts("cfhlk:mstvAFPVd:",\%option) or print_usage();
 
 #
 # Check only one copy running
@@ -175,101 +169,6 @@ sub do_run_test {
 }
 
 ##################################################################
-# Install File::Slurp 
-##################################################################
-
-sub install_file_slurp { 
-  my $perl_module="File::Slurp";
-  my $package_name="perl-File-Slurp";
-  my $package_version="9999.13-1";
-  install_perl_module($package_name,$package_version,$perl_module);
-  return;
-}
-
-##################################################################
-# Install a perl module 
-##################################################################
-
-sub install_perl_module {
-  my $package_name=$_[0]; 
-  my $package_version=$_[1];
-  my $release_test; 
-  my $release_file="/etc/redhat-release";
-  my $remote_base="/pub/linux/extra/dag/redhat/";
-  my $local_file; 
-  my $remote_file; 
-  my $release_string;
-  my $perl_test; 
-  my $perl_module=$_[2]; 
-  my $tester=0;
-  $perl_test=`rpm -qi $package_name |grep Version`;
-  chomp($perl_test);
-  if ($perl_test=~/[0-9]/) {
-    print "$perl_module not installed correctly.\n";
-    return;
-  }
-  else {
-    $tester=1;
-  }
-  if ($tester eq 1) {
-    if (-e "$release_file") {
-      $release_test=`cat $release_file`;
-      chomp($release_test);
-      if ($release_test=~/release 3/) {
-        $release_string="el3";
-        $remote_base="$remote_base/$release_string/en/i386/dag/RPMS"; 
-        $remote_file="$package_name-$package_version.$release_string.rf.noarch.rpm";
-        $local_file="/tmp/$remote_file";
-        $remote_file="$remote_base/$remote_file";
-      }
-      else {
-        if ($release_test=~/release 4/) {
-          $release_string="el4";
-          $remote_base="$remote_base/$release_string/en/i386/dag/RPMS";
-          $remote_file="$package_name-$package_version.$release_string.rf.noarch.rpm";
-          $local_file="/tmp/$remote_file";
-          $remote_file="$remote_base/$remote_file";
-        }
-        else {  
-          if ($release_test=~/release 5/) {
-            if ($package_name=~/Telnet/) {
-              $package_version="3.03-1.2";
-            }
-            $release_string="el5";
-            $remote_base="$remote_base/$release_string/en/i386/dag/RPMS";
-            $remote_file="$package_name-$package_version.$release_string.rf.noarch.rpm";
-            $local_file="/tmp/$remote_file";
-            $remote_file="$remote_base/$remote_file";
-          }
-        }
-      }
-    }
-    get_ftp_file($remote_file,$local_file);
-    if (-e "$local_file") {
-      print "Installing $perl_module\n";
-      system("cd /tmp ; rpm -ivh $local_file");
-      system("rm -f $local_file");
-    }
-    $release_file="/etc/SuSE-release";
-    if ($tester eq 1) {
-      if (-e "$release_file") {
-        $remote_base="/pub/sun/$script_name/tools/"; 
-        $remote_file="perl-File-Slurp-9999.13-9.pm.15.1.noarch.rpm";
-        $local_file="/tmp/$remote_file";
-        $remote_file="$remote_base/$remote_file";
-        get_ftp_file($remote_file,$local_file);
-        if (-e "$local_file") {
-          print "Installing $perl_module\n";
-          system("cd /tmp ; rpm -ivh $local_file");
-          system("rm -f $local_file");
-        }
-      }
-    }
-  }
-  return;
-}
-
-##################################################################
 # This function is to test the whether the File::Slurp module is 
 # loaded in this OS's perl.
 ##################################################################
@@ -283,11 +182,6 @@ sub check_file_slurp {
                 }
     else {  
       $file_slurp=0;
-    }
-    }
-  if (!$option{'n'}) {
-    if ($file_slurp eq 0) {
-      install_file_slurp();
     }
   }
   return;
@@ -307,13 +201,6 @@ if ($os_version=~/SunOS/) {
       exit;
     }
   }
-}
-
-# populate changelog
-
-if ($option{'k'}=~/[0-9][0-9]/) {
-  populate_change_log();
-  print_version_change($option{'k'});
 }
 
 # Code to read in a file
@@ -342,80 +229,6 @@ sub process_debug_file {
   process_disk_info();
   exit;
 }
-
-# Code to upgrade script if a newer version is available 
-
-sub upgrade_script_file {      
-  my $remote_file="/pub/sun/$script_name/$script_name"; 
-  my $local_file=$script_file;      
-  get_ftp_file($remote_file,$local_file);
-  if (!$option{'n'}) {
-    check_script_file();
-  }
-  return;
-}
-
-# Check version of script against remote version
-
-sub check_version_stub {
-  my $remote_stub; 
-  my $local_stub; 
-  my $remote_version;
-  my $remote_file="/pub/sun/$script_name/version";
-  if (!-e "$temp_dir") {
-    system("mkdir -p $temp_dir");
-  }
-  get_ftp_file($remote_file,$version_file);
-  if (-e "$version_file") {
-    $remote_version=`cat $version_file`; chomp($remote_version);
-    $remote_stub=$remote_version; $local_stub=$version_no;
-    $remote_stub=~s/\.//g; $remote_stub=~s/^0//g; $remote_stub=~s/\ //g;
-    $local_stub=~s/\.//g; $local_stub=~s/^0//g; $local_stub=~s/\ //g;
-    if ($remote_stub > $local_stub) {
-      print "Local version of $script_name: $version_no\n";
-      print "Patch version of $script_name: $remote_version\n";
-      print "Upgrading $script_name to $remote_version... ";
-      upgrade_script_file();
-      print "Done.\n";
-      if ($option{'V'}) {
-        print "Executing: $script_file -k $version_no $command_line\n";
-      }
-      system("$script_file -k $version_no $command_line");
-      exit;
-    }
-  }
-  return;
-}
-
-# Code to fetch a file via ftp
-# remote_file must contain full path of file eg /pub/blah/file.tgz
-# local_file must contain pull path of file eg /tmp/file.tgz
-
-sub get_ftp_file {
-  my $remote_file=$_[0]; 
-  my $local_file=$_[1]; 
-  my $ftp_session;
-  my $userid="anonymous"; 
-  my $password="guest@";
-  $ftp_session=Net::FTP->new("$update_server", Passive=>1, Debug=>0);
-  $ftp_session->login("$userid","$password");
-  $ftp_session->type("I");
-  $ftp_session->get("$remote_file","$local_file");
-  $ftp_session->quit;
-  return;
-}
-
-# Check permissions on exe file so monitor_user can run it etc
-
-sub check_script_file {
-  my $monitor_user_test=`cat /etc/group |grep $monitor_user`;
-  chomp($monitor_user_test);
-  if ($monitor_user_test=~/$monitor_user/) {
-    system("chown root:$monitor_user $script_file");
-    system("chmod 750 $script_file");
-  }
-  return;
-} 
 
 # Search Linux device list
 
@@ -539,21 +352,22 @@ sub check_local_config {
   my $lsi_command; 
   my $platform_test; 
   my $raidctl_output="$temp_dir/rdstatus"; 
+  my $output="$temp_dir/$script_name.log"; 
   my $ips_string="/proc/scsi/ips"; 
   my $tester; 
   my $counter;
   my $adaptec_proc="/proc/scsi/aacraid"; 
   my $adaptec_command; 
-  my $adaptec_remote; 
+  my $adaptec_tool; 
   my $adaptec_no; 
   my $serveraid_no; 
   my $firmware_test; 
   my $firmware_command; 
   my $suffix;
-  my $ibmraid_remote; 
+  my $ibmraid_tool; 
   my $release_test; 
   my $prefix;
-  my $remote_file; 
+  my $tools_file; 
   my $command; 
   my $module_test; 
   my $man_file; 
@@ -566,64 +380,29 @@ sub check_local_config {
   my $sasx36_test; 
   my $zpool_name; 
   my @zpool_list;
-  $tester=`id`;
-  chomp($tester);
-  check_file_slurp();
-  # If run by monitor_user don't update script
-  if ($tester=~/$monitor_user/) {
-    $option{'n'}=1;
+  my $user_id=`id -u`;
+  my $home_dir=`echo \$HOME`;
+  my $dir_name=basename($script_name);
+  $tools_dir=dirname($0);
+  if ($tools_dir!~/[A-z]/) {
+    $tools_dir=getcwd;  
+  }
+  $tools_dir="$tools_dir/tools";
+  $vendor_info=search_script("Vendor");
+  $packager_info=search_script("Packager");
+  $version_info=search_script("Version");
+  chomp($user_id);
+  chomp($home_dir);
+  if ($user_id=~/^0$/) {
+    $temp_dir="/var/log/$dir_name";
   }
   else {
-    # Code to create manual
-    if (!$option{'n'}) {
-      if ($os_version=~/[L,l]inux/) {
-        if (!-e "$man_dir") {
-          system("mkdir $man_dir");
-        } 
-        $man_file="/usr/local/share/man/man1/$script_name.man";
-        if ((!-e "$man_dir")&&($tester!~/$monitor_user/)) {
-          system("mkdir -p $man_dir");
-        }
-        $pod_exe="/usr/bin/pod2man";
-        $tester=`cat /etc/group |grep '^disk'`;
-        chomp($tester);
-        if ($tester!~/$monitor_user/) {
-          $tester=`cat /etc/group |grep '^$monitor_user'`;
-          chomp($tester);
-          if ($tester!~/$monitor_user/) {
-            system("/usr/sbin/groupadd -g $monitor_gid $monitor_user");
-          }
-          $tester=`cat /etc/passwd |grep '^$monitor_user'`;
-          chomp($tester);
-          if ($tester!~/$monitor_user/) {
-            system("/usr/sbin/useradd -u $monitor_uid -g $monitor_gid -c '$monitor_gcos' -d /home/$monitor_user $monitor_user -m");
-            #system("/usr/bin/passwd -l $monitor_user");
-          }
-          system("/usr/sbin/usermod -G disk $monitor_user");
-        }
-      }
-      if ($os_version=~/Sun/) {
-        $man_file="/usr/man/man1/$script_name.man";
-        $pod_exe="/usr/local/bin/pod2man";
-        if (! -e "$pod_exe") {
-          $pod_exe="/usr/local/perl/bin/pod2man";
-        }
-      }
-    }
-    check_script_file();
-    if (! -e "$man_file") {
-      if (-e "$pod_exe") {
-        system("$pod_exe $script_file > $man_file");
-      }
-    }
-    if ($option{'n'}) {
-      $temp_dir="/tmp/$script_name";
-    }
-    if (!-e "$temp_dir") {
-      system("mkdir -p $temp_dir");
-    }
+    $temp_dir="$home_dir/.$dir_name";
   }
-  # Check config of Linux
+  if (! -e "$temp_dir") {
+    system("mkdir $temp_dir");
+  }
+  check_file_slurp();
   if ($os_version=~/[L,l]inux/) {
     # Build device mappings
     if (-e "/proc/scsi/scsi") {
@@ -677,14 +456,13 @@ sub check_local_config {
       chomp($release_test);
       if ($release_test=~/release 5/) {
         $adaptec_command="/usr/local/bin/arcconfel5";
-        $adaptec_remote="/pub/sun/$script_name/tools/arcconfel5";
+        $adaptec_tool="$tools_dir/arcconfel5";
       }
       else {
         $adaptec_command="/usr/local/bin/arcconf";
-        $adaptec_remote="/pub/sun/$script_name/tools/arcconf";
+        $adaptec_tool="$tools_dir/arcconf";
       }
       if (! -e "$adaptec_command") {
-        get_ftp_file($adaptec_remote,$adaptec_command);
         system("chmod +x $adaptec_command");
       }
       if ($release_test=~/release 5/) {
@@ -743,8 +521,7 @@ sub check_local_config {
           $ibmraid_command="/usr/local/bin/ipssend";
           $ibmraid_command="$ibmraid_command$ibmraid_test";
           if (! -e "$ibmraid_command") {
-            $ibmraid_remote="/pub/sun/$script_name/tools/ipssend$ibmraid_test";
-            get_ftp_file($ibmraid_remote,$ibmraid_command);
+            $ibmraid_tool="$tools_dir/ipssend$ibmraid_test";
             system("chmod +x $ibmraid_command");
           }
           if (-e "$ibmraid_command") {
@@ -812,16 +589,16 @@ sub check_local_config {
         }
         if ($lsi_test=~/SAS106[4,8]/) {
           $lsi_command="/usr/local/bin/cfg1064";
-          $remote_file="/pub/sun/$script_name/tools/cfg1064";
+          $tools_file="$tools_dir/cfg1064";
           $command="$lsi_command 0 DISPLAY";
         }
         else {
           $lsi_command="/usr/local/bin/cfg1030";
-          $remote_file="/pub/sun/$script_name/tools/cfg1030";
+          $tools_file="$tools_dir/cfg1030";
           $command="$lsi_command getstatus 1";
         }
         if (! -e "$lsi_command") {
-          get_ftp_file($remote_file,$lsi_command);
+          get_ftp_file($tools_file,$lsi_command);
           system("chmod +x $lsi_command");
         }
         if (-e "$lsi_command") {
@@ -854,7 +631,7 @@ sub check_local_config {
       $lsi_command="/usr/local/bin/ipmitool";
       if (-e "$lsi_command") {
         $lsi_test=`/sbin/kldstat |grep ipmi`;
-        chomp($lsi_test);;
+        chomp($lsi_test);
         if ($lsi_test!~/ipmi/) {
           system("/sbin/kldload ipmi");
         }
@@ -1004,14 +781,14 @@ if ($option{'t'}) {
 # help
 
 if ($option{'h'}) {
-  print_help_info();
+  print_usage();
   exit;
 }
 
 # version information
 
 if ($option{'v'}) {
-  print_version_info();
+  print_version();
   exit;
 }
 
@@ -1052,84 +829,58 @@ if (($option{'m'})||($option{'l'})||($option{'t'})||($option{'n'})||($option{'f'
   exit;
 }
 
-# Print change in version information
+# Print version information
 
-sub print_version_change {
-  my $number=$_[0]; my $counter; my $record;
-  print "\n";                                                     
-  if ($number!~/[0-9]/) {                                         
-    print "Fixes since last update:\n";                     
-  }                                                               
-  else {                                                          
-    print "Fixes since $number:\n";                         
-  }                                                               
-  print "\n";                                                     
-  $number=~s/\.//g;
-  for ($counter=$number; $counter<@change_log; $counter++) {
-    $record=$change_log[$counter];
-    chomp($record);
-    print "$record\n";
-  }
+sub print_version {
+  print "\n";
+  print "$script_info v. $version_info [$packager_info]\n";
+  print "\n";
   return;
-}                    
+}
 
 # Print help information
 
-sub print_help_info {
-  $pod_exe=`which pod2text`;
-  chomp($pod_exe);
-  if ($pod_exe=~/^no/) {
-    $pod_exe=`find /usr/perl5 -name pod2text |head -1`;
-    chomp($pod_exe);
-  }
-  system("$pod_exe $0");  
+sub print_usage {
+  print_version();
+  print "Usage: $0 [OPTIONS]\n"; 
+  print "-h Display help\n";
+  print "-V Display version information\n";
+  print "-l Display list of mirrored disks\n";
+  print "-f Display warning messages if any (during this hour)\n";
+  print "-F Display warning messages if any (during this day)\n";
+  print "-A Display warning messages if any\n";
+  print "-m If an error is found send email\n";
+  print "-s If an error is found create syslog message\n";
+  print "-t Induce false errors (for testing purposes)\n";
+  print "-n Run in non network mode (no check for updates)\n";
+  print "-P Print error codes for Patrol\n";
+  print "-v Verbose output\n";
   return;
+}
+
+# Routine to get information from script header
+
+sub search_script {
+  my $search_string=$_[0];
+  my $result;
+  my $header;
+  if ($script_file[0]!~/perl/) {
+    @script_file=read_a_file($script_name);
+  }
+  my @search_info=grep{/^# $search_string/}@script_file;
+  ($header,$result)=split(":",$search_info[0]);
+  $result=~s/^\s+//;
+  chomp($result);
+  return($result);
 }
 
 # Print version information
 
-sub print_version_info {
+sub print_version {
   print "\n";
-  print "$script_name v $version_no $coder_email\n";
-  print "\n";
-  return;
-}
-
-# Print changelog
-
-sub print_change_log {
-
-  my $counter; my $record; my $temp_version; my $temp_name; my $tmpdat; my $tmpstr;
-
-  if ($change_log[0]!~/[A-z]/) {
-    populate_change_log();
-  }
-  print_version_info();
-  for ($counter=0; $counter<@change_log; $counter++) {
-    $record=$change_log[$counter];
-    chomp($record);
-    print "$record\n";
-  }
+  print "$script_info v. $version_info [$packager_info]\n";
   print "\n";
   return;
-}
-
-# Populate change log
-
-sub populate_change_log {
-
-  my $remote_file="/pub/sun/$script_name/changelog"; my $counter;
-  my $local_file="/tmp/changelog"; my $record;
-
-  if (-e "$local_file") {
-    system("rm $local_file");
-  }
-  get_ftp_file($remote_file,$local_file);
-  if (-e "$local_file") {
-    @change_log=`cat $local_file`;
-  }
-  return;
-
 }
 
 # Add to bad disk list
@@ -1172,29 +923,14 @@ sub add_to_bad_disk_list {
 # Process LSI SASx36 Information
 
 sub process_sasx36_info {
-
   my $sasx36_command="/opt/MegaRAID/MegaCli/MegaCli64";
-  my $sasx36_rpm_1="MegaCli-8.00.16-1.i386.rpm";
-  my $sasx36_rpm_2="Lib_Utils-1.00-07.noarch.rpm";
-  my $sasx36_rpm_3="Lib_Utils2-1.00-01.noarch.rpm";
-  my $sasx36_rpm_4="MSM_linux_installer-8.00-05.tar.gz";
-  my $sasx36_rpm_5="libstdc++33-32bit-3.3.3-11.9.x86_64.rpm";
-  my $sasx36_rpm_6="libgcc43-32bit-4.3.3_20081022-11.18.x86_64.rpm";
-  my $sasx36_rpm_7="libstdc++43-32bit-4.3.3_20081022-11.18.x86_64.rpm";
-  my $remote_file_1="/pub/sun/$script_name/tools/$sasx36_rpm_1";
-  my $remote_file_2="/pub/sun/$script_name/tools/$sasx36_rpm_2";
-  my $remote_file_3="/pub/sun/$script_name/tools/$sasx36_rpm_3";
-  my $remote_file_4="/pub/sun/$script_name/tools/$sasx36_rpm_4";
-  my $remote_file_5="/pub/linux/sles/11.0/suse/x86_64/$sasx36_rpm_5";
-  my $remote_file_6="/pub/linux/sles/11.0/suse/x86_64/$sasx36_rpm_6";
-  my $remote_file_7="/pub/linux/sles/11.0/suse/x86_64/$sasx36_rpm_7";
-  my $local_file_1="/tmp/$sasx36_rpm_1"; 
-  my $local_file_2="/tmp/$sasx36_rpm_2"; 
-  my $local_file_3="/tmp/$sasx36_rpm_3"; 
-  my $local_file_4="/tmp/$sasx36_rpm_4"; 
-  my $local_file_5="/tmp/$sasx36_rpm_5"; 
-  my $local_file_6="/tmp/$sasx36_rpm_6"; 
-  my $local_file_7="/tmp/$sasx36_rpm_7"; 
+  my $sasx36_rpm_1="$tools_dir/MegaCli-8.00.16-1.i386.rpm";
+  my $sasx36_rpm_2="$tools_dir/Lib_Utils-1.00-07.noarch.rpm";
+  my $sasx36_rpm_3="$tools_dir/Lib_Utils2-1.00-01.noarch.rpm";
+  my $sasx36_rpm_4="$tools_dir/MSM_linux_installer-8.00-05.tar.gz";
+  my $sasx36_rpm_5="$tools_dir/libstdc++33-32bit-3.3.3-11.9.x86_64.rpm";
+  my $sasx36_rpm_6="$tools_dir/libgcc43-32bit-4.3.3_20081022-11.18.x86_64.rpm";
+  my $sasx36_rpm_7="$tools_dir/libstdc++43-32bit-4.3.3_20081022-11.18.x86_64.rpm";
   my $sasx36_init="/etc/init.d/mrmonitor";
   my $counter; 
   my $record; 
@@ -1213,45 +949,32 @@ sub process_sasx36_info {
   my $spans_status_2;
   my $model="MR9261-8i";
   if (! -e "/usr/lib/libstdc++.so.5") {
-    get_ftp_file($remote_file_6,$local_file_6);
-    if (-e "$local_file_6") {
-      system("rpm -i $local_file_6");
-      system("rm -f $local_file_6");
+    if (-e "$sasx36_rpm_6") {
+      system("rpm -i $sasx36_rpm_6");
     }
-    get_ftp_file($remote_file_5,$local_file_5);
-    if (-e "$local_file_5") {
-      system("rpm -i $local_file_5");
-      system("rm -f $local_file_5");
+    if (-e "$sasx36_rpm_5") {
+      system("rpm -i $sasx36_rpm_5");
     }
   }
   if (! -e "/usr/lib/libstdc++.so.6") {
-    get_ftp_file($remote_file_7,$local_file_7);
-    if (-e "$local_file_7") {
-      system("rpm -i $local_file_7");
-      system("rm -f $local_file_7");
+    if (-e "$sasx36_rpm_7") {
+      system("rpm -i $sasx36_rpm_7");
     }
   } 
   if (! -e "$sasx36_command") {
-    get_ftp_file($remote_file_2,$local_file_2);
-    if (-e "$local_file_2") {
-      system("rpm -i $local_file_2");
-      system("rm -f $local_file_2");
+    if (-e "$sasx36_rpm_2") {
+      system("rpm -i $sasx36_rpm_2");
     }
-    get_ftp_file($remote_file_3,$local_file_3);
-    if (-e "$local_file_3") {
-      system("rpm -i $local_file_3");
-      system("rm -f $local_file_3");
+    if (-e "$sasx36_rpm_3") {
+      system("rpm -i $sasx36_rpm_3");
     }
-    get_ftp_file($remote_file_1,$local_file_1);
-    if (-e "$local_file_1") {
-      system("rpm -i $local_file_1");
-      system("rm -f $local_file_1");
+    if (-e "$sasx36_rpm_1") {
+      system("rpm -i $sasx36_rpm_1");
     }
   }
   if (! -e "$sasx36_init") {
-    get_ftp_file($remote_file_4,$local_file_4);
-    if (-e "$local_file_4") {
-      system("tar -xpf $local_file_4");
+    if (-e "$sasx36_rpm_4") {
+      system("tar -xpf $sasx36_rpm_4");
       system("cd /tmp/disk ; ./RunRPM.sh");
       system("cd /tmp");
       system("rm -rf /tmp/disk");
@@ -1320,8 +1043,7 @@ sub process_sasx36_info {
 sub process_h700_info {
   my $h700_command="/opt/MegaRAID/MegaCli/MegaCli64";
   my $h700_rpm="MegaCli-1.01.39-0.i386.rpm";
-  my $remote_file="/pub/sun/$script_name/tools/$h700_rpm";
-  my $local_file="/tmp/$h700_rpm"; 
+  my $local_file="$tools_dir/$h700_rpm"; 
   my $counter; 
   my $record;
   my $disk_group=0; 
@@ -1339,7 +1061,6 @@ sub process_h700_info {
   my $spans_status_2;
   my $model="H700";
   if (! -e "$h700_command") {
-    get_ftp_file($remote_file,$local_file);
     if (-e "$local_file") {
       system("rpm -i $local_file");
       system("rm -f $local_file");
@@ -2005,6 +1726,8 @@ sub process_dac960_info {
   return;
 }
 
+# Process I20 info
+
 sub process_i2o_info {
   my $file_system="NA"; 
   my $counter; 
@@ -2372,10 +2095,8 @@ sub process_lsi_info {
   return;
 }
 
-#
 # Find a dev-mapper volume name for a raid instance
 # Then determine file systems and return them
-#
 
 sub process_fstab {
   my $number=$_[0]; 
@@ -2461,9 +2182,7 @@ sub process_fstab {
   return($disk_name,$file_system);
 }
 
-#
 # code to convert sd number to cXtXdX 
-#
 
 sub get_controller_no {
   my $disk_no=$_[0]; 
@@ -2933,81 +2652,3 @@ sub process_disk_info {
   return;
 }
 
-__END__
-
-=head1 NAME
-
-dmu - Disk Monitoring Utility
-
-=head1 SYNOPSIS
-
-dmu [OPTIONS]
-
-=head1 DESCRIPTION
-
-dmu is a tool for checking software and hardware mirroring on 
-a number of Unix platforms.
-
-B<Some features of dmu>
-
-Is capable of self updating
-
-Supports multiple mirroring types and controllers in the same machine.
-
-Supports reporting via email and syslog.
-
-=head1 OPTIONS
-
-B<-h> Display help
-
-B<-v> Display version information
-
-B<-c> Display change log
-
-B<-l> Display list of mirrored disks 
-
-B<-f> Display warning messages if any (during this hour)
-
-B<-F> Display warning messages if any (during this day)
-
-B<-A> Display warning messages if any
-
-B<-m> If an error is found send email
-
-B<-s> If an error is found create syslog message
-
-B<-t> Induce false errors (for testing purposes)
-
-B<-n> Run in non network mode (no check for updates)
-
-B<-P> Print error codes for Patrol
-
-B<-V> Verbose output
-
-B<-H> Disable heat logging if error found
-
-=head1 EXAMPLES
-
-Show disk information including status:
-
-B<dmu -l>
-
-Mail errors if they are found (including logging to heat)
-
-B<dmu -m>
-
-Display warning messages created during this hour
-
-B<dmu -f>
-
-Mail errors if they are found (excluding logging to heat)
-
-B<dmu -m -H>
-
-Introduce false errors and send email
-
-B<dmu -m -t>
-
-=head1 AUTHOR
-
-richard@lateralblast.com.au

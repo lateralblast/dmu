@@ -1,0 +1,299 @@
+# Changes:
+# 0.0.1: 
+# Initial version.
+# 0.0.2: 
+# Added -l switch.
+# 0.0.3: 
+# Added -m switch.
+# 0.0.4: 
+# Added -h switch.
+# 0.0.5: 
+# Added -v switch.
+# 0.0.6: 
+# Added Solaris 8/9 support
+# 0.0.7: 
+# Added raidctl support for V440s
+# 0.0.8: 
+# Improved code to deal properly with sub mirrors
+# 0.0.9: 
+# Added support for Veritas
+# 0.1.0: 
+# Remove need for IO::File
+# 0.1.1: 
+# Functionalised code
+# 0.1.2: 
+# Added support for Linux
+# 0.1.3: 
+# Added support for DAC960
+# 0.1.4: 
+# Added support for DPTI20
+# 0.1.5: 
+# Added support for Serveraid
+# 0.1.6: 
+# Added support for mail rather than mailx on RedHat
+# 0.1.7: 
+# Added handling for proc output for DAC having stars in it
+# 0.1.8: 
+# Fixed bug with disksuite metadisk handling
+# 0.1.9: 
+# Changed test for Veritas to remove ERROR output
+# 0.2.0: 
+# Added support for Freebsd and DPTI20
+# 0.2.1: 
+# Added support for software raid on linux
+# 0.2.2: 
+# Added support for LSI controller on linux
+# 0.2.3: 
+# Improved support for ipsend command under linux
+# 0.2.4: 
+# Added syslog support via logger
+# 0.2.5: 
+# Cleaned up code, used Getopt::Std
+# 0.2.6: 
+# Added self update code
+# 0.2.7: 
+# Improved support for raidctl
+# 0.2.8: 
+# Fixed bug with autoupdate
+# 0.2.9: 
+# Added support to Hotspare to ServRAID mirror checking
+# 0.3.0: 
+# Added support to run without checking for latest version
+# 0.3.1: 
+# Added check to disksuite status
+# 0.3.2: 
+# Added code to show resync percentage
+# 0.3.3: 
+# Added code to check mirrors have two submirrors
+# 0.3.4: 
+# Added proactive parsing of dmesg for disk errors
+# 0.3.5: 
+# Added mapping of disk errors to disksuite devices
+# 0.3.6: 
+# Added mapping of disk errors to vx devices
+# 0.3.7: 
+# Fixed resync reporting for disksuite in mail option
+# 0.3.8: 
+# Fixed incomplete mirror for disksuite reporting in mail option
+# 0.3.9: 
+# Fixed bugs in mail option
+# 0.4.0: 
+# Improved command line processing
+# 0.4.1: 
+# Changed the getftp sub to do anonymous login only since patch now is only anonymous
+# 0.4.2: 
+# Added check for zones on Solaris 10
+# 0.4.3: 
+# Changed sys admin from R.Spindler to ss-eng-sun-l
+# 0.4.4: 
+# Improved LSI raid support for Solaris
+# 0.4.5: 
+# Removed use of /tmp as a temp directory
+# 0.4.6: 
+# Added capability to log Heat calls
+# 0.4.7: 
+# Fixed bug with update code
+# 0.4.8: Sun Sep  3 18:51:23 EST 2006 
+# Updated changelog code inline with other scripts
+# 0.4.9: Sun Sep  3 20:06:48 EST 2006 
+# Try to us lynx to post to heat php script if LWP not installed
+# 0.5.0: Mon Sep  4 08:55:09 EST 2006 
+# Cleaned up log file creation and deletion
+# 0.5.1: Mon Sep  4 09:15:47 EST 2006 
+# Added support for change in raidctl output
+# 0.5.2: Tue Sep  5 10:04:00 EST 2006 
+# Added code to allow patrol to run script
+# 0.5.3: Mon Sep 11 17:30:28 EST 2006 
+# Added hostname to mail subject
+# 0.5.4: Fri Sep 22 12:07:25 EST 2006 
+# Fixed disksuit output to display OK rather than Okay
+# 0.5.5: Tue Sep 26 11:18:16 EST 2006 
+# Added output for patrol
+# 0.5.6: Tue Sep 26 15:46:36 EST 2006 
+# Fixed a bug with using patrol option
+# 0.5.7: Fri Sep 29 19:13:08 EST 2006 
+# Added support for LSI1064 SAS controller
+# 0.5.8: Wed Oct  4 18:48:39 EST 2006 
+# Cleaned up Linux Software Raid support
+# 0.5.9: Thu Oct  5 15:02:50 EST 2006 
+# Added ability to fetch ipssend
+# 0.6.0: Wed Oct 11 11:02:26 EST 2006 
+# Improved check for running as patrol
+# 0.6.1: Wed Oct 11 11:45:16 EST 2006 
+# Added code to add patrol to disk group
+# 0.6.2: Wed Nov 29 19:03:27 EST 2006 
+# Added support for T2000
+# 0.6.3: Wed Nov 29 22:28:12 EST 2006 
+# Improved Patrol checking
+# 0.6.4: Sat Feb 10 22:59:41 EST 2007 
+# Split disk processing code into smaller subroutines and improve processing
+# 0.6.5: Sat Feb 10 23:34:33 EST 2007 
+# Cleaned up raidctl handling for Solaris
+# 0.6.6: Sat Feb 10 23:55:59 EST 2007 
+# More cleanups
+# 0.6.7: Sun Feb 11 12:32:54 EST 2007 
+# Converted help to man file using pod2man
+# 0.6.8: Thu Mar  8 12:56:26 EST 2007 
+# Removed code to fetch heat id in responce prefix
+# 0.6.9: Thu Mar  8 13:18:57 EST 2007 
+# Added Okay as a valid status to ServeRAID output
+# 0.7.0: Thu Mar  8 14:35:39 EST 2007 
+# Added handling for ServeRAID 4Lx with updated BIOS
+# 0.7.1: Fri Mar 23 19:55:56 EST 2007 
+# Improved log processing code
+# 0.7.2: Sat Mar 24 17:02:49 EST 2007 
+# Cleaned up code to add disk to bad disk list
+# 0.7.3: Sun Mar 25 12:23:22 EST 2007 
+# Code cleanup and bug fixes
+# 0.7.4: Mon Mar 26 19:21:06 EST 2007 
+# Added support to process messages file under Linux
+# 0.7.5: Tue Mar 27 11:45:46 EST 2007 
+# Ignore fibre-channel (SAN) devices in messages file
+# 0.7.6: Wed Apr  4 08:45:45 EST 2007 
+# Added -A switch to help in messages file processing and debugging
+# 0.7.7: Wed Apr  4 09:40:16 EST 2007 
+# Fixed filesystem name process to include /
+# 0.7.8: Thu Apr 12 10:16:23 EST 2007 
+# Changed mail behavior to only generate one email per event 
+# 0.7.9: Fri Apr 13 00:06:41 EST 2007 
+# Added support for LSI SAS controller under FreeBSD
+# 0.8.0: Fri Apr 13 08:49:11 EST 2007 
+# Added more sanity checking before logging heat call or sending email
+# 0.8.1: Fri Apr 13 11:07:49 EST 2007 
+# Fixed typo and disabled heat logging for the moment
+# 0.8.2: Sun Apr 15 21:42:04 EST 2007 
+# Send mail to cst.its if there is a failure
+# 0.8.3: Wed Jun 13 20:46:24 EST 2007 
+# Fixed error with diff
+# 0.8.4: Sun Jul 22 22:49:57 EST 2007 
+# Added support for V445 and V245
+# 0.8.5: Sat Aug 18 18:28:07 EST 2007 
+# Fixed LSI SAS1064 Controller support on Linux
+# 0.8.6: Tue Aug 21 04:48:35 EST 2007 
+# Ignore messages check if running as patrol
+# 0.8.7: Tue Oct  2 02:13:25 EST 2007 
+# Workaround four Solaris 10 Update 4 on T2000
+# 0.8.8: Tue Oct  2 21:53:53 EST 2007 
+# Added support for X4200 running Solaris x86
+# 0.8.9: Thu Nov  8 20:02:30 EST 2007 
+# Added support ServeRAID 5i Firmware 7.12.X requiring an updated version of ipssend
+# 0.9.0: Sun Dec  2 15:09:32 EST 2007 
+# Improved raidctl check
+# 0.9.1: Tue Dec  4 22:53:55 EST 2007 
+# Added support for T6300 T6320 T5120 T5220 and T6220
+# 0.9.2: Thu Dec  6 00:45:48 EST 2007 
+# Fixed raidctl processing on Solaris 10
+# 0.9.3: Tue Dec 11 11:34:35 EST 2007 
+# Removed prtdiag test which was slowing down check
+# 0.9.4: Mon Dec 17 22:13:32 EST 2007 
+# Fixed raidctl output to deal with unmirrored devices
+# 0.9.5: Thu Jan 17 20:02:24 EST 2008 
+# More raidctl fixes
+# 0.9.6: Tue Apr  8 10:05:53 EST 2008 
+# Ignore IBM SAN resets
+# 0.9.7: Thu May  8 07:54:07 EST 2008 
+# Added support for Solaris 10 Update 5
+# 0.9.8: Thu May  8 08:15:04 EST 2008 
+# Added ss-eng-sun-l to email
+# 0.9.9: Sat May 24 17:25:56 EST 2008 
+# Cleaned up variable names
+# 1.0.0: Sun May 25 18:25:19 EST 2008 
+# Changed name to dmu in order to put into subversion
+# 1.0.1: Sun May 25 18:47:37 EST 2008 
+# Added code to fetch changelog from patch
+# 1.0.2: Sun May 25 18:58:32 EST 2008 
+# Added code to print changes since last update
+# 1.0.3: Sun May 25 19:35:14 EST 2008 
+# Cleaned up filesystem listing
+# 1.0.4: Sun May 25 19:42:45 EST 2008 
+# Cleaned up disk listing and added RHEL 5 support
+# 1.0.5: Sun May 25 20:34:25 EST 2008 
+# Add handling for being run as mdcheck
+# 1.0.6: Sun May 25 22:10:30 EST 2008 
+# Improved support for Linux LVM
+# 1.0.7: Mon May 26 09:20:04 EST 2008 
+# Fixed LSI SAS processing on RHEL 5
+# 1.0.8: Mon May 26 21:34:19 EST 2008 
+# Fixed raidctl handling on Solaris 10 U3 and greater
+# 1.0.9: Tue Jun  3 18:20:15 EST 2008 
+# More raidctl handling fixes
+# 1.1.0: Wed Jun  4 00:29:08 EST 2008 
+# More raidctl improvements
+# 1.1.1: Wed Jun  4 02:45:13 EST 2008 
+# Fixed bug with reporting errors via email
+# 1.1.2: Wed Jun  4 22:32:20 EST 2008 
+# Fixed disk reporting for messages parsing
+# 1.1.3: Mon Jun  9 19:49:45 EST 2008 
+# Fixed disk reporting for messages parsing for veritas disks
+# 1.1.4: Mon Jun  9 21:18:05 EST 2008 
+# Improved filesystem determination
+# 1.1.5: Mon Jun  9 23:10:14 EST 2008 
+# Added support for X4100 running Solaris 10
+# 1.1.6: Mon Jun 16 21:18:59 EST 2008 
+# Fixed issue with DLP on Linux
+# 1.1.7: Mon Jun 16 23:45:39 EST 2008 
+# Improved Dynapath support on Linux
+# 1.1.8: Tue Jun 17 15:00:39 EST 2008 
+# Added dynapath output to disk list
+# 1.1.9: Tue Jul  8 21:00:09 EST 2008 
+# Fixed issue with SDS processing
+# 1.2.0: Tue Jul  8 21:42:48 EST 2008 
+# Fixed issue with SDS output
+# 1.2.1: Tue Jul  8 22:37:13 EST 2008 
+# Cleaned up SDS resync output
+# 1.2.2: Fri Aug 15 10:37:02 EST 2008 
+# Fixed mdcheck typo and removed cst from recipient list
+# 1.2.3: Wed Nov  5 23:38:13 EST 2008 
+# Added Inital ZFS mirrored disk set support
+# 1.2.4: Fri Nov 14 20:30:58 EST 2008 
+# Updated raidctl support for patched raidctl on early Solaris 10 releases
+# 1.2.5: Tue Nov 18 18:34:57 EST 2008 
+# Fixed bug with mailing errors on machine with raidctl
+# 1.2.6: Tue Nov 25 22:04:51 EST 2008 
+# Fixed bug with mailing errors
+# 1.2.7: Mon Dec 15 15:59:37 EST 2008 
+# Added support for X4600
+# 1.2.8: Mon Dec 15 23:44:42 EST 2008 
+# Added support machines running ZFS on hardware raid
+# 1.2.9: Thu Dec 25 10:47:54 EST 2008 
+# Fixed check for File::Slurp
+# 1.3.0: Thu Dec 25 23:16:16 EST 2008 
+# Added code for Solaris 10 machines with no zone packages
+# 1.3.1: Tue 20 Jan 14:11:12 EST 2009 
+# Added support for SAS1068
+# 1.3.2: Tue Jan 20 17:05:08 EST 2009 
+# Improved filesystem determination on Linux
+# 1.3.3: Tue Apr 21 10:14:58 EST 2009 
+# Added check for existing running process
+# 1.3.4: Wed Jul 14 11:48:42 EST 2010 
+# Fixed problem with detecting errors on zpools
+# 1.3.5: Wed Jul 14 15:14:19 EST 2010 
+# Fixed problem with sending email for errors on zpools
+# 1.3.6: Wed Jul 14 15:29:37 EST 2010 
+# Removed legacy from zfs filesystem discovery
+# 1.3.7: Wed Jul 14 17:59:37 EST 2010 
+# Added check for zfs mirrors
+# 1.3.8: Wed Jul 14 19:08:54 EST 2010 
+# Fixed check for zfs mirrors
+# 1.3.9: Thu Jul 15 10:24:34 EST 2010 
+# Fixed zfs check for ATA disks on T1000
+# 1.4.0: Fri Jul 23 08:37:11 EST 2010 
+# Excluded controllers other than c0 and c1 from zpool
+# 1.4.1: Mon Jul 26 16:29:17 EST 2010 
+# Fixed error with mirror checking on ZFS pools
+# 1.4.2: Mon Aug 16 13:54:13 EST 2010 
+# Added support for PERC H700
+# 1.4.3: Mon Aug 16 15:36:39 EST 2010 
+# Fixed output zpools with one disk
+# 1.4.4: Thu Aug 26 07:32:58 EST 2010 
+# Added support for IS3500
+# 1.4.5: Thu Sep  2 19:47:25 EST 2010 
+# Improved sd determination in Linux
+# 1.4.6: Mon Jan 31 20:44:49 EST 2011 
+# Removed debug code
+# 1.4.7: Wed  8 May 2013 13:31:59 EST 
+# Updated script and fix zpool disk identification
+# 1.4.8: Wed 10 Jul 2013 11:28:59 EST 
+# Separated out changelog
+# 1.4.9: Sat 13 Jul 2013 15:54:52 EST 
+# Cleaned up code and added tools directory for Linux
