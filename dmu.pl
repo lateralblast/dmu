@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # Name:         dmu (Disk Monitoring Utility)
-# Version:      1.4.8
+# Version:      1.4.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -770,8 +770,6 @@ if ($option{'m'}) {
   $mail_report=1;
 }
 
-
-
 # test mode, pretend there are errors
 
 if ($option{'t'}) {
@@ -787,7 +785,7 @@ if ($option{'h'}) {
 
 # version information
 
-if ($option{'v'}) {
+if ($option{'V'}) {
   print_version();
   exit;
 }
@@ -843,18 +841,18 @@ sub print_version {
 sub print_usage {
   print_version();
   print "Usage: $0 [OPTIONS]\n"; 
-  print "-h Display help\n";
-  print "-V Display version information\n";
-  print "-l Display list of mirrored disks\n";
-  print "-f Display warning messages if any (during this hour)\n";
-  print "-F Display warning messages if any (during this day)\n";
-  print "-A Display warning messages if any\n";
-  print "-m If an error is found send email\n";
-  print "-s If an error is found create syslog message\n";
-  print "-t Induce false errors (for testing purposes)\n";
-  print "-n Run in non network mode (no check for updates)\n";
-  print "-P Print error codes for Patrol\n";
-  print "-v Verbose output\n";
+  print "-h: Display help\n";
+  print "-V: Display version information\n";
+  print "-l: Display list of mirrored disks\n";
+  print "-f: Display warning messages if any (during this hour)\n";
+  print "-F: Display warning messages if any (during this day)\n";
+  print "-A: Display warning messages if any\n";
+  print "-m: If an error is found send email\n";
+  print "-s: If an error is found create syslog message\n";
+  print "-t: Induce false errors (for testing purposes)\n";
+  print "-n: Run in non network mode (no check for updates)\n";
+  print "-P: Print error codes for Patrol\n";
+  print "-v: Verbose output\n";
   return;
 }
 
@@ -928,9 +926,9 @@ sub process_sasx36_info {
   my $sasx36_rpm_2="$tools_dir/Lib_Utils-1.00-07.noarch.rpm";
   my $sasx36_rpm_3="$tools_dir/Lib_Utils2-1.00-01.noarch.rpm";
   my $sasx36_rpm_4="$tools_dir/MSM_linux_installer-8.00-05.tar.gz";
-  my $sasx36_rpm_5="$tools_dir/libstdc++33-32bit-3.3.3-11.9.x86_64.rpm";
-  my $sasx36_rpm_6="$tools_dir/libgcc43-32bit-4.3.3_20081022-11.18.x86_64.rpm";
-  my $sasx36_rpm_7="$tools_dir/libstdc++43-32bit-4.3.3_20081022-11.18.x86_64.rpm";
+  my $sasx36_rpm_5="$tools_dir/libstdc++33-3.3.3-11.9.x86_64.rpm";
+  my $sasx36_rpm_6="$tools_dir/libgcc43-32bit-4.3.4_20091019-0.7.35.x86_64.rpm";
+  my $sasx36_rpm_7="$tools_dir/libstdc++43-32bit-4.3.4_20091019-0.7.35.x86_64.rpm";
   my $sasx36_init="/etc/init.d/mrmonitor";
   my $counter; 
   my $record; 

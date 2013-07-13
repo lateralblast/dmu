@@ -35,7 +35,7 @@ Usage
 	dmu [OPTIONS]
 
 	-h Display help
-	-v Display version information
+	-V Display version information
 	-c Display change log
 	-l Display list of mirrored disks
 	-f Display warning messages if any (during this hour)
@@ -46,8 +46,7 @@ Usage
 	-t Induce false errors (for testing purposes)
 	-n Run in non network mode (no check for updates)
 	-P Print error codes for Patrol
-	-V Verbose output
-	-H Disable heat logging if error found
+	-v Verbose output
 
 Examples
 --------
