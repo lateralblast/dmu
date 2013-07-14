@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # Name:         dmu (Disk Monitoring Utility)
-# Version:      1.4.9
+# Version:      1.5.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -236,12 +236,10 @@ sub search_device_list {
   my $search_string=$_[0]; 
   my $disk_group=$_[1]; 
   my $suffix;
-  my $counter; 
   my $record; 
   my $disk_name="unknown"; 
   my $number=0;
-  for ($counter=0; $counter<@device_list; $counter++) {
-    $record=$device_list[$counter];
+  foreach $record (@device_list) {
     if ($record=~/$search_string/) {
       ($disk_name,$suffix)=split('\|',$record);
       if ($disk_group!~/[0-9]/) {
@@ -267,7 +265,6 @@ sub search_device_list {
 # 
 
 sub build_linux_device_list {
-  my $counter; 
   my $record; 
   my $disk_number; 
   my $sd_number=0; 
@@ -355,7 +352,6 @@ sub check_local_config {
   my $output="$temp_dir/$script_name.log"; 
   my $ips_string="/proc/scsi/ips"; 
   my $tester; 
-  my $counter;
   my $adaptec_proc="/proc/scsi/aacraid"; 
   my $adaptec_command; 
   my $adaptec_tool; 
@@ -887,7 +883,6 @@ sub add_to_bad_disk_list {
   my $disk_name=$_[0]; 
   my $disk_status=$_[1]; 
   my $file_system=$_[2];
-  my $counter; 
   my $record; 
   my $tester=0; 
   my $suffix;
@@ -902,8 +897,7 @@ sub add_to_bad_disk_list {
   if ($disk_name!~/[0-9]$|[a-g]$/) {
     return;
   } 
-  for ($counter=0; $counter<@bad_disk_list; $counter++) {
-    $record=$bad_disk_list[$counter];
+  foreach $record (@bad_disk_list) {
     if ($record=~/^$disk_name/) {
       $tester=1;
     }
@@ -912,8 +906,7 @@ sub add_to_bad_disk_list {
     }
   }
   if ($tester eq 0) {
-    $bad_disk_list[$marker]="$disk_name|$disk_status|$file_system";
-    $marker++;
+    push(@bad_disk_list,"$disk_name|$disk_status|$file_system");
   }
   return;
 }
@@ -930,7 +923,6 @@ sub process_sasx36_info {
   my $sasx36_rpm_6="$tools_dir/libgcc43-32bit-4.3.4_20091019-0.7.35.x86_64.rpm";
   my $sasx36_rpm_7="$tools_dir/libstdc++43-32bit-4.3.4_20091019-0.7.35.x86_64.rpm";
   my $sasx36_init="/etc/init.d/mrmonitor";
-  my $counter; 
   my $record; 
   my $disk_group=0; 
   my $suffix; 
@@ -979,8 +971,7 @@ sub process_sasx36_info {
     }
   }
   @sasx36_info=`$sasx36_command -CfgDsply -aAll`;
-  for ($counter=0; $counter<@sasx36_info; $counter++) {
-    $record=@sasx36_info[$counter];
+  foreach $record (@sasx36_info) {
     chomp($record);
     if ($record=~/^DISK GROUPS/) {
       ($prefix,$disk_group)=split(":",$record);
@@ -1042,7 +1033,6 @@ sub process_h700_info {
   my $h700_command="/opt/MegaRAID/MegaCli/MegaCli64";
   my $h700_rpm="MegaCli-1.01.39-0.i386.rpm";
   my $local_file="$tools_dir/$h700_rpm"; 
-  my $counter; 
   my $record;
   my $disk_group=0; 
   my $suffix; 
@@ -1065,8 +1055,7 @@ sub process_h700_info {
     }
   }
   @h700_info=`$h700_command -CfgDsply -aAll`;
-  for ($counter=0; $counter<@h700_info; $counter++) {
-    $record=@h700_info[$counter];
+  foreach $record (@h700_info) {
     chomp($record);
     if ($record=~/^DISK GROUPS/) {
       ($prefix,$disk_group)=split(":",$record);
@@ -1122,7 +1111,6 @@ sub process_h700_info {
 # Process Dynapath information
 
 sub process_dynapath_info {
-  my $counter; 
   my $record; 
   my $suffix; 
   my $prefix;
@@ -1132,8 +1120,7 @@ sub process_dynapath_info {
   my $manual_mount; 
   my $mirror_type; 
   my $disk_temp;
-  for ($counter=0; $counter<@dynapath_info; $counter++) {
-    $record=$dynapath_info[$counter];
+  foreach $record (@dynapath_info) {
     chomp($record);
     if ($record=~/sd/) {
       $disk_name="";
@@ -1170,15 +1157,13 @@ sub process_dynapath_info {
 # Process Veritas Information
 
 sub process_veritas_info {
-  my $counter; 
   my $record; 
   my $disk_name; 
   my $suffix;
   my $file_system; 
   my $group_name; 
   my $disk_status;
-  for ($counter=0; $counter<@veritas_info; $counter++) {
-    $record=$veritas_info[$counter];
+  foreach $record (@veritas_info) {
     chomp($record);
     if ($record=~/^c|^Di/) {
       ($disk_name,$suffix,$file_system,$group_name,$disk_status)=split(' ',$record);
@@ -1202,7 +1187,6 @@ sub process_veritas_info {
 # Process ZFS mirrors
 
 sub process_zfs_info {
-  my $counter; 
   my $pool_name=""; 
   my $record; 
   my $suffix;
@@ -1222,8 +1206,7 @@ sub process_zfs_info {
   my $disk_record; 
   my $disk_type;
   my $mirror_check=0;
-  for ($counter=0; $counter<@zfs_info; $counter++) {
-    $record=$zfs_info[$counter];
+  foreach $record (@zfs_info) {
     chomp($record);
     if ($record=~/pool\:/) {
       ($prefix,$pool_name)=split(": ",$record);
@@ -1297,13 +1280,11 @@ sub process_zfs_info {
 sub get_zpool_name {
   my $disk_name=$_[0]; 
   my $tester; 
-  my $counter; 
   my $record;
   my @zpool_list=`zpool list |grep -v '^NAME' |awk '{print \$1}'`;
   my $zpool_name="";
   $disk_name=~s/\/dev\/dsk\///g;
-  for ($counter=0; $counter<@zpool_list; $counter++) {
-    $record=$zpool_list[$counter];
+  foreach $record (@zpool_list) {
     chomp($record);
     if ($record=~/[A-z]/) {
       $tester=`zpool status |grep '$disk_name'`;
@@ -1354,7 +1335,6 @@ sub get_zfs_file_system {
 
 sub process_raidctl_info {
   my $controller_no=$_[0]; 
-  my $counter; 
   my $record; 
   my $rddiff=0; 
   my $disk_name; 
@@ -1377,8 +1357,7 @@ sub process_raidctl_info {
   my $stripe_size;
   my $zfs_command; 
   my $zpool_name;
-  for ($counter=0; $counter<@raidctl_info; $counter++) {
-    $record=$raidctl_info[$counter];
+  foreach $record (@raidctl_info) {
     chomp($record);
     $record=~s/GOOD/OK/g;
     if ($record=~/Type|IM/) {
@@ -1686,7 +1665,6 @@ sub process_sds_info {
 
 sub process_dac960_info {
   my $file_system="NA"; 
-  my $counter;
   my $record;
   my $disk_status; 
   my $tester=0; 
@@ -1696,8 +1674,7 @@ sub process_dac960_info {
   my $vendor; 
   my $models; 
   my $errors;
-  for ($counter=0; $counter<@dac960_info; $counter++) {
-    $record=$dac960_info[$counter];
+  foreach $record (@dac960_info) {
     chomp($record);
     if (($record=~/Vendor/)&&($record!~/ESG-SHV/)) {
       ($disk_name,$suffix,$vendor,$suffix,$models,$suffix,$suffix)=split(' ',$record);
@@ -1728,7 +1705,6 @@ sub process_dac960_info {
 
 sub process_i2o_info {
   my $file_system="NA"; 
-  my $counter; 
   my $record;
   my $disk_target_id; 
   my $disk_channel; 
@@ -1736,8 +1712,7 @@ sub process_i2o_info {
   my $disk_lun; 
   my $disk_name; 
   my $disk_status;
-  for ($counter=0; $counter<@i2o_info; $counter++) {
-    $record=$i2o_info[$counter];
+  foreach $record (@i2o_info) {
     chomp($record);
     if ($record=~/TID/) {
       $record=~s/\)//g;
@@ -1764,7 +1739,6 @@ sub process_i2o_info {
 
 sub process_ibmraid_info {
   my @file_list; 
-  my $counter; 
   my $record; 
   my $prefix;
   my $suffix; 
@@ -1774,8 +1748,7 @@ sub process_ibmraid_info {
   my $tester=0; 
   my $disk_status; 
   my $number;
-  for ($counter=0; $counter<@ibmraid_info; $counter++) {
-    $record=$ibmraid_info[$counter];
+  foreach $record (@ibmraid_info) {
     chomp($record);
     if ($record=~/Logical drive number/) {
       $tester=1;
@@ -1896,7 +1869,6 @@ sub process_swmirror_info {
 sub process_adaptec_info {
   my $release_test=$_[0]; 
   my @file_list; 
-  my $counter; 
   my $record; 
   my $prefix; 
   my $suffix; 
@@ -1921,8 +1893,7 @@ sub process_adaptec_info {
     $device_one="0";
     $device_two="1";
   }
-  for ($counter=0; $counter<@adaptec_info; $counter++) {
-    $record=$adaptec_info[$counter];
+  foreach $record (@adaptec_info) {
     chomp($record);
     if ($record=~/Logical drive number/) {
       $tester=1;
@@ -1997,14 +1968,12 @@ sub process_adaptec_info {
 
 sub process_freebsd_info {
   my $file_system="N/A"; 
-  my $counter; 
   my $record;
   my $disk_name; 
   my $suffix; 
   my $disk_status; 
   my $file_system;
-  for ($counter=0; $counter<@freebsd_info; $counter++) {
-    $record=$freebsd_info[$counter];
+  foreach $record (@freebsd_info) {
     chomp($record);
     if ($record=~/DASD/) {
       ($disk_name,$suffix,$suffix,$suffix,$suffix,$suffix,$suffix,$disk_status)=split(' ',$record);
@@ -2102,7 +2071,6 @@ sub process_fstab {
   my $file_system; 
   my $disk_name; 
   my $tester; 
-  my $counter; 
   my @file_list; 
   my $prefix; 
   my $suffix; 
@@ -2141,8 +2109,7 @@ sub process_fstab {
       @file_list=`cat /etc/fstab | grep -v '^#' |grep sd |grep dev |awk '{print \$1":"\$2}' |sort -k 1`;
     }
   }
-  for ($counter=0; $counter<@file_list; $counter++) {
-    $record=$file_list[$counter];
+  foreach $record (@file_list) {
     chomp($record);
     ($prefix,$suffix)=split(/\:/,$record);
     if ($prefix=~/Vol/) {
@@ -2296,7 +2263,6 @@ sub get_disk_id {
 sub get_messages_info {
   my @dmesgs; 
   my $date_string; 
-  my $counter; 
   my $record; 
   my $disk_status;
   my $prefix; 
@@ -2367,8 +2333,7 @@ sub get_messages_info {
       @dmesgs=`$command`;
     }
   }
-  for ($counter=0; $counter<@dmesgs; $counter++) {
-    $bad_disk=$dmesgs[$counter];
+  foreach $bad_disk (@dmesgs) {
     chomp($bad_disk);
     if ($os_version=~/Linux|linux/) {
       if ($bad_disk=~/I\/O [E,e]rror/) {
@@ -2490,7 +2455,6 @@ sub get_file_system {
   my $file_system; 
   my $file_name; 
   my @file_info; 
-  my $file_counter;
   my $manual_mount=0; 
   my $pvscan; 
   my $id_no;
@@ -2529,8 +2493,7 @@ sub get_file_system {
   if ($file_info[0]=~/[A-z]|[0-9]|\//) {
     $manual_mount=1;
   }
-  for ($file_counter=0; $file_counter<@file_info; $file_counter++) {
-    $file_name=$file_info[$file_counter];
+  foreach $file_name (@file_info) {
     chomp($file_name);
     $file_name=~s/ //g;
     if ($file_name!~/\//) {
@@ -2560,7 +2523,6 @@ sub process_disk_info {
   my $disk_status; 
   my $file_system; 
   my $record; 
-  my $counter; 
   my $hostname=`hostname`; 
   my $tester; 
   my $string_test=0;
@@ -2582,8 +2544,7 @@ sub process_disk_info {
       open(STDOUT,">$output");
       print STDOUT "Disk Errors:\n";
       print STDOUT "\n";
-      for ($counter=0; $counter<@bad_disk_list; $counter++) {
-        $record=$bad_disk_list[$counter];
+      foreach $record (@bad_disk_list) {
         ($disk_name,$disk_status,$file_system)=split(/\|/,$record);
         if ($disk_name=~/^[A-z]/) {
           $disk_status=~s/Optimal/OK/g;
@@ -2630,9 +2591,8 @@ sub process_disk_info {
     }
     else {
       print "Disk Errors:\n\n";
-      for ($counter=0; $counter<@bad_disk_list; $counter++) {
+      foreach $record (@bad_disk_list) {
         $disk_status=~s/Optimal/OK/g;
-        $record=$bad_disk_list[$counter];
         ($disk_name,$disk_status,$file_system)=split(/\|/,$record);
         print "Disk:  $disk_name\n";
         print "Status:  $disk_status\n";
