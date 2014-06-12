@@ -1,3 +1,5 @@
+![alt tag](https://raw.githubusercontent.com/lateralblast/dmu/master/dmu.jpg)
+
 DMU
 ===
 
