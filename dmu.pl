@@ -3,14 +3,15 @@
 # Name:         dmu (Disk Monitoring Utility)
 # Version:      1.5.0
 # Release:      1
-# License:      Open Source
+# License:      CC-BA (Creative Commons By Attrbution)
+#               http://creativecommons.org/licenses/by/4.0/legalcode
 # Group:        System
 # Source:       N/A
 # URL:          http://lateralblast.com.au/
 # Distribution: Solaris and Linux
 # Vendor:       UNIX
 # Packager:     Richard Spindler <richard@lateralblast.com.au>
-# Description:  Hardware and software disk mirror monitoring script 
+# Description:  Hardware and software disk mirror monitoring script
 #               Supports:
 #               Solaris Volume Manager
 #               Veritas Volume Manager
@@ -34,53 +35,53 @@ use Cwd;
 
 # Initialise global variables
 
-my %option; 
-my $verbose=0; 
-my $file_system; 
-my $zone_name; 
-my $date_file; 
-my @change_log; 
+my %option;
+my $verbose=0;
+my $file_system;
+my $zone_name;
+my $date_file;
+my @change_log;
 my $tools_dir;
 my $coder_email="richard\@lateralblast.com.au";
 my $report_email="Report.Receiver\@vendor.com";
-my $disk_slice; 
-my $marker=0; 
-my @bad_disk_list; 
-my @sds_info; 
-my @raidctl_info; 
-my @fs_list; 
-my @i2o_info; 
-my @veritas_info; 
-my @ibmraid_info; 
-my @freebsd_info; 
-my @swmirror_info; 
-my @lsi_info; 
-my @adaptec_info; 
-my $mail_report=0; 
+my $disk_slice;
+my $marker=0;
+my @bad_disk_list;
+my @sds_info;
+my @raidctl_info;
+my @fs_list;
+my @i2o_info;
+my @veritas_info;
+my @ibmraid_info;
+my @freebsd_info;
+my @swmirror_info;
+my @lsi_info;
+my @adaptec_info;
+my $mail_report=0;
 my @zfs_info;
-my @h700_info; 
-my @sasx36_info; 
+my @h700_info;
+my @sasx36_info;
 my @device_list;
-my $script_file=$0; 
-my $os_version=`uname -a`; 
-my @dac960_info; 
-my $adaptec_test=0; 
-my $dac960_test=0; 
-my $sds_test=0; 
-my $veritas_test=0; 
-my $raidctl_test=0; 
-my $i2o_test=0; 
-my $ibmraid_test=0; 
-my $freebsd_test=0; 
-my $swmirror_test=0; 
-my $lsi_test=0; 
-my $zfs_test; 
-my $errors=0; 
+my $script_file=$0;
+my $os_version=`uname -a`;
+my @dac960_info;
+my $adaptec_test=0;
+my $dac960_test=0;
+my $sds_test=0;
+my $veritas_test=0;
+my $raidctl_test=0;
+my $i2o_test=0;
+my $ibmraid_test=0;
+my $freebsd_test=0;
+my $swmirror_test=0;
+my $lsi_test=0;
+my $zfs_test;
+my $errors=0;
 my $email_address;
-my $command_line; 
-my $date_no; 
+my $command_line;
+my $date_no;
 my $version_file;
-my $dynapath_test=0; 
+my $dynapath_test=0;
 my @dynapath_info;
 my $dynapath_command="/usr/local/dynapath/bin/dpcli";
 my $file_slurp=0;
@@ -112,7 +113,7 @@ do_run_test();
 
 # Stick command line options in a string
 # This is done so when we do a self update
-# the script is re-run with the same options 
+# the script is re-run with the same options
 
 foreach (keys %option) {
   $command_line="-$_ $command_line";
@@ -128,7 +129,7 @@ else {
 }
 
 # Create a file name with the date
-# If creating trouble tickets we don't 
+# If creating trouble tickets we don't
 # want to create more than one per day
 
 $date_no=`date +\%d\%m\%y`;
@@ -153,7 +154,7 @@ else {
 
 
 ##################################################################
-# Check that a copy of script is not already running 
+# Check that a copy of script is not already running
 ##################################################################
 
 sub do_run_test {
@@ -169,7 +170,7 @@ sub do_run_test {
 }
 
 ##################################################################
-# This function is to test the whether the File::Slurp module is 
+# This function is to test the whether the File::Slurp module is
 # loaded in this OS's perl.
 ##################################################################
 
@@ -180,7 +181,7 @@ sub check_file_slurp {
     if ($file_slurp_test) {
       $file_slurp=1;
                 }
-    else {  
+    else {
       $file_slurp=0;
     }
   }
@@ -211,20 +212,20 @@ sub read_a_file {
   if ($file_slurp eq 0) {
     @file_info=`cat $file_name`;
   }
-  else {  
+  else {
     @file_info=read_file($file_name);
   }
   return @file_info;
 }
 
-# Code to process a debug file 
+# Code to process a debug file
 
 sub process_debug_file {
   my $tester=read_a_file($option{'d'});
   if ($tester=~/State Reloc Hot Spare/) {
     $sds_test=1;
     @sds_info=read_a_file($option{'d'});
-    process_sds_info(); 
+    process_sds_info();
   }
   process_disk_info();
   exit;
@@ -233,11 +234,11 @@ sub process_debug_file {
 # Search Linux device list
 
 sub search_device_list {
-  my $search_string=$_[0]; 
-  my $disk_group=$_[1]; 
+  my $search_string=$_[0];
+  my $disk_group=$_[1];
   my $suffix;
-  my $record; 
-  my $disk_name="unknown"; 
+  my $record;
+  my $disk_name="unknown";
   my $number=0;
   foreach $record (@device_list) {
     if ($record=~/$search_string/) {
@@ -251,7 +252,7 @@ sub search_device_list {
         }
         else {
           $number++;
-        }     
+        }
       }
     }
   }
@@ -262,33 +263,33 @@ sub search_device_list {
 # Build device list with mappings
 #
 # Create an array eg sda|LSI1064
-# 
+#
 
 sub build_linux_device_list {
-  my $record; 
-  my $disk_number; 
-  my $sd_number=0; 
-  my $prefix; 
+  my $record;
+  my $disk_number;
+  my $sd_number=0;
+  my $prefix;
   my $controller;
-  my @scsi_info=`cat /proc/scsi/scsi`; 
-  my $id; 
-  my $suffix; 
-  my $channel; 
-  my $lun; 
-  my $model; 
-  my $disk_name; 
-  my $model; 
-  my $id; 
+  my @scsi_info=`cat /proc/scsi/scsi`;
+  my $id;
+  my $suffix;
   my $channel;
-  my $number; 
+  my $lun;
+  my $model;
+  my $disk_name;
+  my $model;
+  my $id;
+  my $channel;
+  my $number;
   my $type;
-  my $vendor; 
-  my $temp_name; 
-  my $min_number; 
+  my $vendor;
+  my $temp_name;
+  my $min_number;
   my $array_size;
   for ($counter=0; $counter<@scsi_info; $counter++) {
     $record=$scsi_info[$counter];
-    chomp($record); 
+    chomp($record);
     if ($record=~/Host/) {
       $number=$counter+2;
       $type=$scsi_info[$number];
@@ -321,7 +322,7 @@ sub build_linux_device_list {
           $temp_name++;
           $temp_name=chr($temp_name);
           $disk_name="sd$temp_name";
-          $array_size=@device_list; 
+          $array_size=@device_list;
           $device_list[$array_size]="$disk_name|$model";
         }
         else {
@@ -329,7 +330,7 @@ sub build_linux_device_list {
         }
         $disk_name="";
       }
-    } 
+    }
   }
   return;
 }
@@ -337,51 +338,51 @@ sub build_linux_device_list {
 # Check the local configuration including determining disk mirroring
 
 sub check_local_config {
-  my $i2o_command; 
-  my $ibmraid_command; 
-  my $sds_command; 
-  my $raidctl_command; 
-  my $veritas_command; 
-  my $freebsd_command; 
-  my $counter; 
-  my $record; 
-  my $monitor_user_test; 
-  my $lsi_command; 
-  my $platform_test; 
-  my $raidctl_output="$temp_dir/rdstatus"; 
-  my $output="$temp_dir/$script_name.log"; 
-  my $ips_string="/proc/scsi/ips"; 
-  my $tester; 
-  my $adaptec_proc="/proc/scsi/aacraid"; 
-  my $adaptec_command; 
-  my $adaptec_tool; 
-  my $adaptec_no; 
-  my $serveraid_no; 
-  my $firmware_test; 
-  my $firmware_command; 
+  my $i2o_command;
+  my $ibmraid_command;
+  my $sds_command;
+  my $raidctl_command;
+  my $veritas_command;
+  my $freebsd_command;
+  my $counter;
+  my $record;
+  my $monitor_user_test;
+  my $lsi_command;
+  my $platform_test;
+  my $raidctl_output="$temp_dir/rdstatus";
+  my $output="$temp_dir/$script_name.log";
+  my $ips_string="/proc/scsi/ips";
+  my $tester;
+  my $adaptec_proc="/proc/scsi/aacraid";
+  my $adaptec_command;
+  my $adaptec_tool;
+  my $adaptec_no;
+  my $serveraid_no;
+  my $firmware_test;
+  my $firmware_command;
   my $suffix;
-  my $ibmraid_tool; 
-  my $release_test; 
+  my $ibmraid_tool;
+  my $release_test;
   my $prefix;
-  my $tools_file; 
-  my $command; 
-  my $module_test; 
-  my $man_file; 
-  my $controller_no; 
-  my $zfs_command; 
-  my $raidctl_version; 
-  my $ufs_test; 
+  my $tools_file;
+  my $command;
+  my $module_test;
+  my $man_file;
+  my $controller_no;
+  my $zfs_command;
+  my $raidctl_version;
+  my $ufs_test;
   my $h700_test;
   my $man_dir="/usr/local/share/man/man1";
-  my $sasx36_test; 
-  my $zpool_name; 
+  my $sasx36_test;
+  my $zpool_name;
   my @zpool_list;
   my $user_id=`id -u`;
   my $home_dir=`echo \$HOME`;
   my $dir_name=basename($script_name);
   $tools_dir=dirname($0);
   if ($tools_dir!~/[A-z]/) {
-    $tools_dir=getcwd;  
+    $tools_dir=getcwd;
   }
   $tools_dir="$tools_dir/tools";
   $vendor_info=search_script("Vendor");
@@ -414,9 +415,9 @@ sub check_local_config {
       }
       else {
         $h700_test=0;
-      } 
+      }
     }
-    # Check for LSI SASx36 
+    # Check for LSI SASx36
     if (-e "/proc/scsi/scsi") {
       $sasx36_test=`cat /proc/scsi/scsi |grep 'SASX36'`;
       chomp($sasx36_test);
@@ -426,7 +427,7 @@ sub check_local_config {
       }
       else {
         $sasx36_test=0;
-      } 
+      }
     }
     # Check for DAC960
     if (-e "/proc/rd/status") {
@@ -443,11 +444,11 @@ sub check_local_config {
       $i2o_test=1;
       $i2o_command="cat /proc/scsi/dpt_i2o/0";
       @i2o_info=`$i2o_command`;
-      process_i2o_info(); 
+      process_i2o_info();
     }
     # Check for Adaptec
     if ((-e "$adaptec_proc/0")||(-e "$adaptec_proc/1")||(-e "$adaptec_proc/2")||(-e "/sys/module/aacraid/version")) {
-      # If we have Adaptec check we have arcconf 
+      # If we have Adaptec check we have arcconf
       $release_test=`cat /etc/redhat-release`;
       chomp($release_test);
       if ($release_test=~/release 5/) {
@@ -462,7 +463,7 @@ sub check_local_config {
         system("chmod +x $adaptec_command");
       }
       if ($release_test=~/release 5/) {
-          $adaptec_no="1";  
+          $adaptec_no="1";
           @adaptec_info=`cd /tmp ; $adaptec_command GETCONFIG $adaptec_no`;
           process_adaptec_info($release_test);
       }
@@ -560,7 +561,7 @@ sub check_local_config {
       @dynapath_info=`$dynapath_command status`;
       process_dynapath_info();
     }
-    # Check for LSI 
+    # Check for LSI
     if ((-e "/proc/mpt/ioc0/summary")||(-e "/sys/module/mptsas/version")||(-e "/proc/scsi/mptsas/7")) {
       if (-e "/proc/mpt/ioc0/summary") {
         $lsi_test=`cat /proc/mpt/ioc0/summary |grep LSI`;
@@ -611,7 +612,7 @@ sub check_local_config {
     }
   }
   else {
-    # Check if we are running FreeBSD 
+    # Check if we are running FreeBSD
     if ($os_version=~/FreeBSD/) {
       $freebsd_command="/usr/dpt/raidutil";
       if (-e "$freebsd_command") {
@@ -654,7 +655,7 @@ sub check_local_config {
         if ($platform_test=~/V440|V20z|V40z|T200|V445|V245|X4100|X4200|X4600|T5220|T5120|T6220|T6300|T6320|T6340/) {
           $raidctl_test=`cat /etc/vfstab |grep md`;
           chomp($raidctl_test);
-          $ufs_test=`cat /etc/vfstab |grep ufs`;  
+          $ufs_test=`cat /etc/vfstab |grep ufs`;
           chomp($ufs_test);
           $raidctl_version=`ls -l /usr/sbin/raidctl`;
           chomp($raidctl_version);
@@ -690,7 +691,7 @@ sub check_local_config {
                     }
                     else {
                       $controller_no="c3";
-                    } 
+                    }
                   }
                 }
                 if (-e "$raidctl_output") {
@@ -836,7 +837,7 @@ sub print_version {
 
 sub print_usage {
   print_version();
-  print "Usage: $0 [OPTIONS]\n"; 
+  print "Usage: $0 [OPTIONS]\n";
   print "-h: Display help\n";
   print "-V: Display version information\n";
   print "-l: Display list of mirrored disks\n";
@@ -880,15 +881,15 @@ sub print_version {
 # Add to bad disk list
 
 sub add_to_bad_disk_list {
-  my $disk_name=$_[0]; 
-  my $disk_status=$_[1]; 
+  my $disk_name=$_[0];
+  my $disk_status=$_[1];
   my $file_system=$_[2];
-  my $record; 
-  my $tester=0; 
+  my $record;
+  my $tester=0;
   my $suffix;
   if ($disk_name=~/\(/) {
     ($disk_name,$suffix)=split(" ",$disk_name);
-  } 
+  }
   if ($os_version=~/Sun/) {
     if ($disk_name=~/dev/) {
       $disk_name=~s/\/dev\/dsk\///g;
@@ -896,7 +897,7 @@ sub add_to_bad_disk_list {
   }
   if ($disk_name!~/[0-9]$|[a-g]$/) {
     return;
-  } 
+  }
   foreach $record (@bad_disk_list) {
     if ($record=~/^$disk_name/) {
       $tester=1;
@@ -923,19 +924,19 @@ sub process_sasx36_info {
   my $sasx36_rpm_6="$tools_dir/libgcc43-32bit-4.3.4_20091019-0.7.35.x86_64.rpm";
   my $sasx36_rpm_7="$tools_dir/libstdc++43-32bit-4.3.4_20091019-0.7.35.x86_64.rpm";
   my $sasx36_init="/etc/init.d/mrmonitor";
-  my $record; 
-  my $disk_group=0; 
-  my $suffix; 
-  my $disk_name; 
+  my $record;
+  my $disk_group=0;
+  my $suffix;
+  my $disk_name;
   my $disk_status;
-  my $file_system; 
-  my $manual_mount; 
+  my $file_system;
+  my $manual_mount;
   my $mirror_type;
-  my $prefix; 
-  my $spans; 
-  my $spans_no; 
+  my $prefix;
+  my $spans;
+  my $spans_no;
   my $final_spans=0;
-  my $spans_status_1; 
+  my $spans_status_1;
   my $spans_status_2;
   my $model="MR9261-8i";
   if (! -e "/usr/lib/libstdc++.so.5") {
@@ -950,7 +951,7 @@ sub process_sasx36_info {
     if (-e "$sasx36_rpm_7") {
       system("rpm -i $sasx36_rpm_7");
     }
-  } 
+  }
   if (! -e "$sasx36_command") {
     if (-e "$sasx36_rpm_2") {
       system("rpm -i $sasx36_rpm_2");
@@ -976,7 +977,7 @@ sub process_sasx36_info {
     if ($record=~/^DISK GROUPS/) {
       ($prefix,$disk_group)=split(":",$record);
       $disk_group=~s/ //g;
-      $disk_name=search_device_list($model,$disk_group);  
+      $disk_name=search_device_list($model,$disk_group);
       #$disk_name=chr($disk_group+97);
       #$disk_name="sd$disk_name";
       ($file_system,$manual_mount)=get_file_system($disk_name,$mirror_type);
@@ -988,7 +989,7 @@ sub process_sasx36_info {
     if ($record=~/SPAN/) {
       ($prefix,$spans_no)=split(":",$record);
       $spans_no=~s/ //g;
-      $final_spans=0; 
+      $final_spans=0;
     }
     if ($record=~/^State/) {
       if (($spans=~/2/)&&($spans_no=~/0/)) {
@@ -996,12 +997,12 @@ sub process_sasx36_info {
         $spans_status_1=~s/^ //g;
       }
       if (($spans=~/1/)&&($spans_no=~/0/)) {
-        $final_spans=1; 
+        $final_spans=1;
         ($prefix,$disk_status)=split(":",$record);
         $disk_status=~s/^ //g;
       }
       if (($spans=~/2/)&&($spans_no=~/1/)) {
-        $final_spans=1; 
+        $final_spans=1;
         ($prefix,$spans_status_2)=split(":",$record);
         $spans_status_2=~s/^ //g;
         if (($spans_status_1!~/OK|Optimal/)||($spans_status_2!~/OK|Optimal/)) {
@@ -1025,25 +1026,25 @@ sub process_sasx36_info {
     }
   }
   return;
-} 
+}
 
 # Process PERC H7000 Information
 
 sub process_h700_info {
   my $h700_command="/opt/MegaRAID/MegaCli/MegaCli64";
   my $h700_rpm="MegaCli-1.01.39-0.i386.rpm";
-  my $local_file="$tools_dir/$h700_rpm"; 
+  my $local_file="$tools_dir/$h700_rpm";
   my $record;
-  my $disk_group=0; 
-  my $suffix; 
-  my $disk_name; 
+  my $disk_group=0;
+  my $suffix;
+  my $disk_name;
   my $disk_status;
-  my $file_system; 
-  my $manual_mount; 
+  my $file_system;
+  my $manual_mount;
   my $mirror_type;
-  my $prefix; 
-  my $spans; 
-  my $spans_no; 
+  my $prefix;
+  my $spans;
+  my $spans_no;
   my $final_spans=0;
   my $spans_status_1;
   my $spans_status_2;
@@ -1060,7 +1061,7 @@ sub process_h700_info {
     if ($record=~/^DISK GROUPS/) {
       ($prefix,$disk_group)=split(":",$record);
       $disk_group=~s/ //g;
-      $disk_name=search_device_list($model,$disk_group);  
+      $disk_name=search_device_list($model,$disk_group);
       #$disk_name=chr($disk_group+97);
       #$disk_name="sd$disk_name";
       ($file_system,$manual_mount)=get_file_system($disk_name,$mirror_type);
@@ -1072,7 +1073,7 @@ sub process_h700_info {
     if ($record=~/SPAN/) {
       ($prefix,$spans_no)=split(":",$record);
       $spans_no=~s/ //g;
-      $final_spans=0; 
+      $final_spans=0;
     }
     if ($record=~/^State/) {
       if (($spans=~/2/)&&($spans_no=~/0/)) {
@@ -1080,12 +1081,12 @@ sub process_h700_info {
         $spans_status_1=~s/ //g;
       }
       if (($spans=~/1/)&&($spans_no=~/0/)) {
-        $final_spans=1; 
+        $final_spans=1;
         ($prefix,$disk_status)=split(":",$record);
         $disk_status=~s/ //g;
       }
       if (($spans=~/2/)&&($spans_no=~/1/)) {
-        $final_spans=1; 
+        $final_spans=1;
         ($prefix,$spans_status_2)=split(":",$record);
         $spans_status_2=~s/ //g;
         if (($spans_status_1!~/OK|Optimal/)||($spans_status_1!~/OK|Optimal/)) {
@@ -1106,19 +1107,19 @@ sub process_h700_info {
     }
   }
   return;
-} 
+}
 
 # Process Dynapath information
 
 sub process_dynapath_info {
-  my $record; 
-  my $suffix; 
+  my $record;
+  my $suffix;
   my $prefix;
-  my $disk_name; 
-  my $disk_status; 
+  my $disk_name;
+  my $disk_status;
   my $file_system;
-  my $manual_mount; 
-  my $mirror_type; 
+  my $manual_mount;
+  my $mirror_type;
   my $disk_temp;
   foreach $record (@dynapath_info) {
     chomp($record);
@@ -1131,7 +1132,7 @@ sub process_dynapath_info {
         $disk_status="OK";
       }
       ($prefix,$disk_name)=split("::",$record);
-      $disk_name=substr($disk_name,1,3);  
+      $disk_name=substr($disk_name,1,3);
       if ($disk_name=~/[a-z]/) {
         $disk_name=get_dynapath_device($disk_name);
         $disk_name=~s/ //g;
@@ -1157,11 +1158,11 @@ sub process_dynapath_info {
 # Process Veritas Information
 
 sub process_veritas_info {
-  my $record; 
-  my $disk_name; 
+  my $record;
+  my $disk_name;
   my $suffix;
-  my $file_system; 
-  my $group_name; 
+  my $file_system;
+  my $group_name;
   my $disk_status;
   foreach $record (@veritas_info) {
     chomp($record);
@@ -1187,23 +1188,23 @@ sub process_veritas_info {
 # Process ZFS mirrors
 
 sub process_zfs_info {
-  my $pool_name=""; 
-  my $record; 
+  my $pool_name="";
+  my $record;
   my $suffix;
-  my $pool_test=0; 
-  my $mirror_test=1; 
-  my $disk_name; 
-  my $disk_status; 
-  my $file_system; 
+  my $pool_test=0;
+  my $mirror_test=1;
+  my $disk_name;
+  my $disk_status;
+  my $file_system;
   my @fs_list;
-  my $tester=0; 
-  my $number; 
-  my $temp_name; 
-  my $prefix; 
-  my $fail_name; 
+  my $tester=0;
+  my $number;
+  my $temp_name;
+  my $prefix;
+  my $fail_name;
   my @disk_list;
   my $number;
-  my $disk_record; 
+  my $disk_record;
   my $disk_type;
   my $mirror_check=0;
   foreach $record (@zfs_info) {
@@ -1214,7 +1215,7 @@ sub process_zfs_info {
       @disk_list=`/usr/sbin/zpool status $pool_name |awk '{print \$1" "\$2}' |egrep '^mirror|^c[0-2]'`;
       if ($disk_list[0]=~/mirror/) {
         $mirror_check=1;
-      } 
+      }
       if (($disk_list[0]=~/c[0-9]/)||($disk_list[1]=~/c[0-9]/)) {
         for ($number=0; $number<@disk_list; $number++) {
           $disk_record=$disk_list[$number];
@@ -1246,7 +1247,7 @@ sub process_zfs_info {
         }
         if ($os_version=~/T1000/) {
           $disk_type=`iostat -E |grep ATA`;
-          chomp($disk_type);  
+          chomp($disk_type);
         }
         if (($disk_list[2]!~/c/)&&($disk_type!~/ATA/)&&($mirror_check eq 1)) {
           $mirror_test=0;
@@ -1270,16 +1271,16 @@ sub process_zfs_info {
         }
       }
     }
-    
+
   }
   return;
-} 
+}
 
 # Get zpool name
 
 sub get_zpool_name {
-  my $disk_name=$_[0]; 
-  my $tester; 
+  my $disk_name=$_[0];
+  my $tester;
   my $record;
   my @zpool_list=`zpool list |grep -v '^NAME' |awk '{print \$1}'`;
   my $zpool_name="";
@@ -1289,7 +1290,7 @@ sub get_zpool_name {
     if ($record=~/[A-z]/) {
       $tester=`zpool status |grep '$disk_name'`;
       chomp($tester);
-      if ($tester=~/$disk_name/) {  
+      if ($tester=~/$disk_name/) {
         $zpool_name=$record;
       }
     }
@@ -1301,11 +1302,11 @@ sub get_zpool_name {
 
 sub get_zfs_file_system {
 
-  my $pool_name=$_[0]; 
-  my $file_system; 
+  my $pool_name=$_[0];
+  my $file_system;
   my $tester=0;
   my $suffix;
-  my $prefix; 
+  my $prefix;
   my $number;
   for ($number=0; $number<@fs_list; $number++) {
     $suffix=$fs_list[$number];
@@ -1334,28 +1335,28 @@ sub get_zfs_file_system {
 # Process raidctl output
 
 sub process_raidctl_info {
-  my $controller_no=$_[0]; 
-  my $record; 
-  my $rddiff=0; 
-  my $disk_name; 
-  my $raid_type; 
-  my $column; 
-  my $disk_status; 
-  my $raidctl_disk1; 
-  my $raidctl_status1; 
-  my $suffix; 
-  my $file_system; 
-  my $raidctl_disk2; 
+  my $controller_no=$_[0];
+  my $record;
+  my $rddiff=0;
+  my $disk_name;
+  my $raid_type;
+  my $column;
+  my $disk_status;
+  my $raidctl_disk1;
+  my $raidctl_status1;
+  my $suffix;
+  my $file_system;
+  my $raidctl_disk2;
   my $raidctl_status2;
-  my $number; 
-  my $tester=0; 
-  my $raidctl_count=0; 
+  my $number;
+  my $tester=0;
+  my $raidctl_count=0;
   my $disk_size;
-  my $temp_one; 
-  my $temp_two; 
-  my $temp_three; 
+  my $temp_one;
+  my $temp_two;
+  my $temp_three;
   my $stripe_size;
-  my $zfs_command; 
+  my $zfs_command;
   my $zpool_name;
   foreach $record (@raidctl_info) {
     chomp($record);
@@ -1364,7 +1365,7 @@ sub process_raidctl_info {
       $rddiff=1;
     }
     if ($record=~/c|0\.|MISSING/) {
-      if ($record=~/^c/) {  
+      if ($record=~/^c/) {
         $raidctl_count=0;
         if ($rddiff eq 1) {
           $record=~s/IM//g;
@@ -1386,7 +1387,7 @@ sub process_raidctl_info {
             $disk_status="ERROR";
           }
         }
-        else {  
+        else {
           ($disk_name,$disk_status,$raidctl_disk1,$raidctl_status1)=split(":",$record);
           if ($disk_status=~/OPT|OK|GOOD/) {
             $disk_status="OK";
@@ -1493,26 +1494,26 @@ sub process_raidctl_info {
 # Process meta information
 
 sub process_sds_info {
-  my $counter; 
-  my $record; 
-  my $submirror_counter; 
+  my $counter;
+  my $record;
+  my $submirror_counter;
   my $submirror_test;
-  my $mirror_test; 
-  my $submirror_temp; 
-  my $disk_status; 
+  my $mirror_test;
+  my $submirror_temp;
+  my $disk_status;
   my $disk_name;
-  my $detached_test; 
-  my $temp_name; 
-  my $suffix; 
+  my $detached_test;
+  my $temp_name;
+  my $suffix;
   my $number;
-  my $resync_text; 
-  my $prefix; 
-  my $exists; 
+  my $resync_text;
+  my $prefix;
+  my $exists;
   my $resync_string;
-  my $submirror_name; 
-  my $resync_counter; 
+  my $submirror_name;
+  my $resync_counter;
   my $tester=0;
-  my $temp_record; 
+  my $temp_record;
   my $temp_counter;
   for ($counter=0; $counter<@sds_info; $counter++) {
     $record=$sds_info[$counter];
@@ -1534,7 +1535,7 @@ sub process_sds_info {
               }
               $detached_test=1;
             }
-          } 
+          }
           else {
             $submirror_test=0;
           }
@@ -1592,7 +1593,7 @@ sub process_sds_info {
                 print "Status:  $resync_text\n";
               }
             }
-            else {  
+            else {
               print "Status:  $disk_status\n";
             }
           }
@@ -1639,7 +1640,7 @@ sub process_sds_info {
           }
           else {
             $exists=0;
-          } 
+          }
         }
         if ($verbose eq 1) {
           $file_system=`grep '$disk_name' /etc/vfstab |grep -v '#' |grep md |grep -v '$disk_name\[0-9\]' |awk '{print \$3}'`;
@@ -1655,7 +1656,7 @@ sub process_sds_info {
         if ($submirror_counter le 0) {
           $tester=0;
         }
-      } 
+      }
     }
   }
   return;
@@ -1664,15 +1665,15 @@ sub process_sds_info {
 # Process DAC info
 
 sub process_dac960_info {
-  my $file_system="NA"; 
+  my $file_system="NA";
   my $record;
-  my $disk_status; 
-  my $tester=0; 
-  my $prefix; 
+  my $disk_status;
+  my $tester=0;
+  my $prefix;
   my $disk_name;
-  my $suffix; 
-  my $vendor; 
-  my $models; 
+  my $suffix;
+  my $vendor;
+  my $models;
   my $errors;
   foreach $record (@dac960_info) {
     chomp($record);
@@ -1704,13 +1705,13 @@ sub process_dac960_info {
 # Process I20 info
 
 sub process_i2o_info {
-  my $file_system="NA"; 
+  my $file_system="NA";
   my $record;
-  my $disk_target_id; 
-  my $disk_channel; 
-  my $disk_target; 
-  my $disk_lun; 
-  my $disk_name; 
+  my $disk_target_id;
+  my $disk_channel;
+  my $disk_target;
+  my $disk_lun;
+  my $disk_name;
   my $disk_status;
   foreach $record (@i2o_info) {
     chomp($record);
@@ -1729,7 +1730,7 @@ sub process_i2o_info {
         print "Disk:   $disk_name\n";
         print "Status: $disk_status\n";
       }
-      
+
     }
   }
   return;
@@ -1738,15 +1739,15 @@ sub process_i2o_info {
 # Process IBM ServeRAID info (excluding 8i)
 
 sub process_ibmraid_info {
-  my @file_list; 
-  my $record; 
+  my @file_list;
+  my $record;
   my $prefix;
-  my $suffix; 
-  my $disk_name; 
-  my $file_system; 
+  my $suffix;
+  my $disk_name;
+  my $file_system;
   my $device_name;
-  my $tester=0; 
-  my $disk_status; 
+  my $tester=0;
+  my $disk_status;
   my $number;
   foreach $record (@ibmraid_info) {
     chomp($record);
@@ -1813,16 +1814,16 @@ sub process_ibmraid_info {
 # Process linux software mirroring info
 
 sub process_swmirror_info {
-  my $resync_string=""; 
-  my $resync_counter=0; 
+  my $resync_string="";
+  my $resync_counter=0;
   my $counter;
-  my $record; 
-  my $disk_name; 
-  my $prefix; 
+  my $record;
+  my $disk_name;
+  my $prefix;
   my $disk_status;
-  my $raid_no; 
-  my $disk_one; 
-  my $disk_two; 
+  my $raid_no;
+  my $disk_one;
+  my $disk_two;
   my $file_system;
   my $suffix;
   for ($counter=0; $counter<@swmirror_info; $counter++) {
@@ -1849,7 +1850,7 @@ sub process_swmirror_info {
         }
         else {
           $disk_status="OK";
-        } 
+        }
         if ($disk_status=~/ERROR/) {
           add_to_bad_disk_list($disk_name,$disk_status,$file_system);
         }
@@ -1867,19 +1868,19 @@ sub process_swmirror_info {
 # Process IBM Adaptec info (ServerRAID 8i)
 
 sub process_adaptec_info {
-  my $release_test=$_[0]; 
-  my @file_list; 
-  my $record; 
-  my $prefix; 
-  my $suffix; 
-  my $disk_name; 
-  my $file_system; 
-  my $disk_status; 
-  my $tester=0; 
-  my $device_name; 
-  my $number; 
-  my $device_one="1"; 
-  my $device_two="2"; 
+  my $release_test=$_[0];
+  my @file_list;
+  my $record;
+  my $prefix;
+  my $suffix;
+  my $disk_name;
+  my $file_system;
+  my $disk_status;
+  my $tester=0;
+  my $device_name;
+  my $number;
+  my $device_one="1";
+  my $device_two="2";
   my $lvm_test;
   $lvm_test=`cat /etc/fstab |grep Vol |head -1`;
   chomp($lvm_test);
@@ -1939,7 +1940,7 @@ sub process_adaptec_info {
           }
         }
       }
-    }   
+    }
     if ($record=~/Status of logical drive/) {
       ($prefix,$disk_status)=split(/\:/,$record);
       if ($errors eq 1) {
@@ -1967,11 +1968,11 @@ sub process_adaptec_info {
 # Process FreeBSD raidctl output
 
 sub process_freebsd_info {
-  my $file_system="N/A"; 
+  my $file_system="N/A";
   my $record;
-  my $disk_name; 
-  my $suffix; 
-  my $disk_status; 
+  my $disk_name;
+  my $suffix;
+  my $disk_status;
   my $file_system;
   foreach $record (@freebsd_info) {
     chomp($record);
@@ -2000,18 +2001,18 @@ sub process_freebsd_info {
 
 # Process LSI mirror info
 
-sub process_lsi_info {  
-  my $counter; 
-  my $record; 
-  my $prefix; 
-  my $number=0; 
-  my $suffix; 
-  my $disk_name; 
-  my $file_system; 
-  my $disk_status; 
+sub process_lsi_info {
+  my $counter;
+  my $record;
+  my $prefix;
+  my $number=0;
+  my $suffix;
+  my $disk_name;
+  my $file_system;
+  my $disk_status;
   my $device_no=0;
-  my $model="Logical Volume"; 
-  my $manual_mount; 
+  my $model="Logical Volume";
+  my $manual_mount;
   my $mirror_type;
   my $disk_group=0;
   for ($counter=0; $counter<@lsi_info; $counter++) {
@@ -2026,7 +2027,7 @@ sub process_lsi_info {
         ($disk_name,$file_system)=process_fstab($number,$device_no);
       }
       else {
-        $disk_name=search_device_list($model,$disk_group);  
+        $disk_name=search_device_list($model,$disk_group);
         ($file_system,$manual_mount)=get_file_system($disk_name,$mirror_type);
       }
       $device_no++;
@@ -2050,7 +2051,7 @@ sub process_lsi_info {
             print "Status: $disk_status\n";
             print "Mount:  $file_system\n";
           }
-        } 
+        }
         else {
           print "Disk:   $disk_name\n";
           print "Status: $disk_status\n";
@@ -2066,20 +2067,20 @@ sub process_lsi_info {
 # Then determine file systems and return them
 
 sub process_fstab {
-  my $number=$_[0]; 
-  my $lvm_file; 
-  my $file_system; 
-  my $disk_name; 
-  my $tester; 
-  my @file_list; 
-  my $prefix; 
-  my $suffix; 
-  my $record; 
-  my $disk_name; 
-  my $file_system; 
-  my $delete; 
-  my $raw_device; 
-  my $lvm_name; 
+  my $number=$_[0];
+  my $lvm_file;
+  my $file_system;
+  my $disk_name;
+  my $tester;
+  my @file_list;
+  my $prefix;
+  my $suffix;
+  my $record;
+  my $disk_name;
+  my $file_system;
+  my $delete;
+  my $raw_device;
+  my $lvm_name;
   my $fdisk_output="/tmp/fdiskinfo";
   my $disk_id;
   $lvm_file="/tmp/$script_name.lvm";
@@ -2093,9 +2094,9 @@ sub process_fstab {
   if ($tester=~/Vol/) {
     system("/usr/sbin/pvs > $lvm_file");
     $lvm_name=`cat $lvm_file |grep lvm |head -$number |tail -1 |awk '{print \$2}'`;
-    chomp($lvm_name);   
+    chomp($lvm_name);
     system("rm $lvm_file");
-    if ($lvm_name!~/lvm2/) {  
+    if ($lvm_name!~/lvm2/) {
       @file_list=`cat /etc/fstab | grep -v '^#' |grep '$lvm_name' |grep dev|awk '{print \$1":"\$2}' |sort -k 1`;
     }
   }
@@ -2147,20 +2148,20 @@ sub process_fstab {
   return($disk_name,$file_system);
 }
 
-# code to convert sd number to cXtXdX 
+# code to convert sd number to cXtXdX
 
 sub get_controller_no {
-  my $disk_no=$_[0]; 
-  my $counter; 
-  my $record; 
-  my @disk_nos; 
-  my @controller_nos; 
-  my $number; 
-  my $release_test; 
-  my $tester=0; 
-  my $instance_no; 
-  my $prefix; 
-  my $wwn_no; 
+  my $disk_no=$_[0];
+  my $counter;
+  my $record;
+  my @disk_nos;
+  my @controller_nos;
+  my $number;
+  my $release_test;
+  my $tester=0;
+  my $instance_no;
+  my $prefix;
+  my $wwn_no;
   my $search_string;
   my $mpxio_test=0;
   $instance_no=$disk_no;
@@ -2201,7 +2202,7 @@ sub get_controller_no {
           }
           else {
             $search_string="port-wwn";
-          } 
+          }
           if ($record=~/$search_string/) {
             $number=$counter;
             $number++;
@@ -2246,8 +2247,8 @@ sub get_controller_no {
 # Get Disk ID under linux
 
 sub get_disk_id {
-  my $disk_no=$_[0]; 
-  my $prefix; 
+  my $disk_no=$_[0];
+  my $prefix;
   my $suffix;
   ($prefix,$disk_no)=split("id",$disk_no);
   ($disk_no,$suffix)=split("lun",$disk_no);
@@ -2257,44 +2258,44 @@ sub get_disk_id {
   $disk_no="sd$disk_no";
   return($disk_no);
 }
-  
+
 # Process system messages looking for SCSI errors
 
 sub get_messages_info {
-  my @dmesgs; 
-  my $date_string; 
-  my $record; 
+  my @dmesgs;
+  my $date_string;
+  my $record;
   my $disk_status;
-  my $prefix; 
-  my $suffix; 
-  my $bad_disk; 
-  my $file_system; 
+  my $prefix;
+  my $suffix;
+  my $bad_disk;
+  my $file_system;
   my $mirror_type;
-  my $number; 
-  my $disk_no; 
-  my $file_no; 
-  my $list_no=0; 
-  my $file_system; 
-  my $mdconf_file; 
-  my $marker=0; 
-  my $month_string; 
-  my $day_string; 
-  my $hour_string; 
-  my $command; 
-  my @mdlist; 
-  my $messages_file; 
-  my $disk_status="WARNING"; 
-  my $disk_group=0; 
+  my $number;
+  my $disk_no;
+  my $file_no;
+  my $list_no=0;
+  my $file_system;
+  my $mdconf_file;
+  my $marker=0;
+  my $month_string;
+  my $day_string;
+  my $hour_string;
+  my $command;
+  my @mdlist;
+  my $messages_file;
+  my $disk_status="WARNING";
+  my $disk_group=0;
   my $manual_mount=0;
   $date_string=`date |awk '{print \$2" "\$3" "\$4}'`;
-  chomp($date_string);  
+  chomp($date_string);
   ($month_string,$day_string,$hour_string)=split(' ',$date_string);
   ($hour_string,$suffix,$suffix)=split("\:",$hour_string);
   if ($day_string=~/[0-9][0-9]/) {
     $day_string="$month_string $day_string";
     $date_string="$day_string $hour_string";
   }
-  else {  
+  else {
     $day_string="$month_string  $day_string";
     $date_string="$day_string $hour_string";
   }
@@ -2392,7 +2393,7 @@ sub get_messages_info {
           chomp($disk_group);
           ($file_system,$manual_mount)=get_file_system($disk_group,$mirror_type);
           add_to_bad_disk_list($disk_no,$disk_status,$file_system);
-        }   
+        }
       }
       if (($sds_test ne 1)&&($veritas_test ne 1)) {
         $mirror_type="fs";
@@ -2407,19 +2408,19 @@ sub get_messages_info {
         }
       }
     }
-  } 
+  }
   return;
 }
 
 # Get Dynapath Disk ID
 
 sub get_dynapath_device {
-  my $disk_no=$_[0]; 
-  my $prefix; 
+  my $disk_no=$_[0];
+  my $prefix;
   my $suffix;
-  my $record; 
-  my $counter; 
-  my $number; 
+  my $record;
+  my $counter;
+  my $number;
   my $tester;
   if ($dynapath_info[0]!~/=/) {
     @dynapath_info=`$dynapath_command status`;
@@ -2450,13 +2451,13 @@ sub get_dynapath_device {
 # Get Filesystem lists
 
 sub get_file_system {
-  my $disk_no=$_[0]; 
-  my $mirror_type=$_[0]; 
-  my $file_system; 
-  my $file_name; 
-  my @file_info; 
-  my $manual_mount=0; 
-  my $pvscan; 
+  my $disk_no=$_[0];
+  my $mirror_type=$_[0];
+  my $file_system;
+  my $file_name;
+  my @file_info;
+  my $manual_mount=0;
+  my $pvscan;
   my $id_no;
   if ($os_version=~/SunOS/) {
     if ($mirror_type=~/fs/) {
@@ -2469,7 +2470,7 @@ sub get_file_system {
   else {
     if (-e "/usr/local/dynapath") {
       $disk_no=get_dynapath_device($disk_no);
-    } 
+    }
     @file_info=`grep -i '$disk_no' /etc/fstab |grep -v '^#' |awk '{print \$2}'`;
     if ($file_info[0]!~/[A-z]|[0-9]|\//) {
       $pvscan=`pvscan |grep '$disk_no' |awk '{print \$4}'`;
@@ -2483,13 +2484,13 @@ sub get_file_system {
         $id_no=`ls -l /dev/disk/by-id/scsi* |grep '$disk_no' |awk '{print \$9}' |head -1`;
         chomp($id_no);
         @file_info=`grep -i '$id_no' /etc/fstab |grep -v '^#' |awk '{print \$2}'`;
-        
+
       }
     }
   }
   if ($file_info[0]!~/[A-z]|[0-9]|\//) {
     @file_info=`df |grep -i '$disk_no' |awk '{print \$6}'`;
-  } 
+  }
   if ($file_info[0]=~/[A-z]|[0-9]|\//) {
     $manual_mount=1;
   }
@@ -2500,7 +2501,7 @@ sub get_file_system {
       $file_name="swap";
     }
     if ($file_name=~/[0-9]|[A-z]|\//) {
-      if ($file_system!~/$file_name/) { 
+      if ($file_system!~/$file_name/) {
         if ($file_system=~/[0-9]|[A-z]|\//) {
           $file_system="$file_system, $file_name";
         }
@@ -2509,7 +2510,7 @@ sub get_file_system {
         }
       }
     }
-  }   
+  }
   if ($file_info[0]!~/[A-z]|[0-9]|\//) {
     $file_system="None";
   }
@@ -2519,12 +2520,12 @@ sub get_file_system {
 # Process disk information looking for errors and act according to options
 
 sub process_disk_info {
-  my $disk_name; 
-  my $disk_status; 
-  my $file_system; 
-  my $record; 
-  my $hostname=`hostname`; 
-  my $tester; 
+  my $disk_name;
+  my $disk_status;
+  my $file_system;
+  my $record;
+  my $hostname=`hostname`;
+  my $tester;
   my $string_test=0;
   chomp($hostname);
   if (($bad_disk_list[0]=~/[A-z]|[0-9]/)||($bad_disk_list[1]=~/[A-z]|[0-9]/)) {
@@ -2567,7 +2568,7 @@ sub process_disk_info {
             }
           }
           if ((!-e "$date_file")||($option{'t'})) {
-            $tester=`cat $output |grep -v '^Disk Errors'`;  
+            $tester=`cat $output |grep -v '^Disk Errors'`;
             if ($tester=~/[A-z]/) {
               if ($os_version=~/[L,l]inux/) {
                 system("cat $output |mail -s\"$script_name: $hostname\" $email_address");
@@ -2575,7 +2576,7 @@ sub process_disk_info {
               else {
                 system("cat $output |mailx -s\"$script_name: $hostname\" $email_address");
               }
-              system("cp $output $date_file");  
+              system("cp $output $date_file");
             }
           }
         }
@@ -2598,8 +2599,8 @@ sub process_disk_info {
         print "Status:  $disk_status\n";
         print "Mount: $file_system\n";
       }
-      print "\n"; 
-    } 
+      print "\n";
+    }
   }
   else {
     if ($option{'P'}) {
