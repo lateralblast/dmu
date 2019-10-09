@@ -297,5 +297,7 @@
 # Separated out changelog
 # 1.4.9: Sat 13 Jul 2013 15:54:52 EST
 # Cleaned up code and added tools directory for Linux
-# 1.5.0 Sun 14 Jul 2013 12:07:13 EST
+# 1.5.0: Sun 14 Jul 2013 12:07:13 EST
 # More code cleanup
+# 1.5.1: Wed  9 Oct 2019 15:35:53 AEDT
+# Minor bug fixes

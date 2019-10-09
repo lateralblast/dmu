@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # Name:         dmu (Disk Monitoring Utility)
-# Version:      1.5.0
+# Version:      1.5.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attrbution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -287,6 +287,7 @@ sub build_linux_device_list {
   my $temp_name;
   my $min_number;
   my $array_size;
+  my $counter;
   for ($counter=0; $counter<@scsi_info; $counter++) {
     $record=$scsi_info[$counter];
     chomp($record);
@@ -807,9 +808,6 @@ if (($option{'F'})||($option{'A'})) {
 # if running in a correct mode actually do disk checks
 
 if (($option{'m'})||($option{'l'})||($option{'t'})||($option{'n'})||($option{'f'})) {
-  if (!$option{'n'}) {
-    check_version_stub();
-  }
   if ($option{'l'}) {
     print "\n";
   }
