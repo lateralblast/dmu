@@ -82,6 +82,14 @@ Introduce false errors and send email:
 dmu -m -t
 ```
 
+Version
+-------
+
+Current version: 1.6.7
+
+Run `dmu -V` to display the installed version and `dmu -c` to display the change log.
+See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+
 License
 -------
 
@@ -89,3 +97,10 @@ This work is licensed under the Creative Commons
 Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0).
 See the [LICENSE](LICENSE) file or
 https://creativecommons.org/licenses/by-nc-sa/4.0/ for details.
+
+Help Support Development
+------------------------
+
+If you find this software useful and would like to support its development, please consider buying me a coffee:
+
+https://ko-fi.com/richardatlateralblast
