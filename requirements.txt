@@ -1,0 +1,10 @@
+# dmu is a Perl script and has no Python dependencies.
+# Perl modules are listed in the cpanfile (install with: cpanm --installdeps .)
+#
+# Optional Perl module: File::Slurp (falls back to cat if missing)
+#
+# System tools used, depending on the mirroring type being checked:
+#   Linux:   mdstat (kernel md), mail, logger, journalctl (optional),
+#            arcconf, ipssend, MegaCli, cfg1030/cfg1064 (bundled in tools/)
+#   Solaris: metastat, zpool, raidctl, vxdisk, mailx, logger
+#   FreeBSD: raidutil, ipmitool, mailx, logger

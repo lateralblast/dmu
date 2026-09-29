@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
 # Name:         dmu (Disk Monitoring Utility)
-# Version:      1.5.1
+# Version:      1.6.7
 # Release:      1
-# License:      CC-BA (Creative Commons By Attrbution)
-#               http://creativecommons.org/licenses/by/4.0/legalcode
+# License:      CC BY-NC-SA 4.0 (Creative Commons Attribution-NonCommercial-ShareAlike)
+#               https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 # Group:        System
 # Source:       N/A
 # URL:          http://lateralblast.com.au/
@@ -29,7 +29,6 @@
 
 use strict;
 use Getopt::Std;
-use Net::FTP;
 use File::Basename;
 use Cwd;
 
@@ -96,14 +95,15 @@ my $output;
 
 chomp($os_version);
 
-# Check local configuration
+# Set up paths and script information
 
-check_local_config();
-check_file_slurp();
+init_local_config();
 
 # Get command line options
 
-getopts("cfhlk:mstvAFPVd:",\%option) or print_usage();
+getopts("cfhlmnstvAFPRVd:",\%option) or print_usage();
+
+check_file_slurp();
 
 #
 # Check only one copy running
@@ -159,10 +159,11 @@ else {
 
 sub do_run_test {
   my $run_test;
-  $run_test=`ps -ef |egrep '$script_name|mdcheck' |grep -v grep |grep -v vim |wc -l`;
+  my $script_base=basename($script_name);
+  $run_test=`ps -ef |egrep '$script_base|mdcheck' |grep -v grep |grep -v vim |wc -l`;
   chomp($run_test);
   $run_test=~s/ //g;
-  if ($run_test!~/^[1|2]$/) {
+  if ($run_test!~/^[12]$/) {
     print "$script_name is already running\n";
     exit;
   }
@@ -194,7 +195,7 @@ if ($os_version=~/SunOS/) {
   if ($os_version=~/5\.10|5\.11/) {
     $zone_name=`/usr/bin/zonename`;
     chomp($zone_name);
-    if ($zone_name!~/[A-z]/) {
+    if ($zone_name!~/[A-Za-z]/) {
       $zone_name="global";
     }
     if ($zone_name!~/global/) {
@@ -278,9 +279,6 @@ sub build_linux_device_list {
   my $lun;
   my $model;
   my $disk_name;
-  my $model;
-  my $id;
-  my $channel;
   my $number;
   my $type;
   my $vendor;
@@ -315,7 +313,7 @@ sub build_linux_device_list {
         $disk_name=chr($sd_number+97);
         $disk_name="sd$disk_name";
         $temp_name=search_device_list($model);
-        if ($temp_name=~/[A-z]/) {
+        if ($temp_name=~/[A-Za-z]/) {
           $temp_name=$device_list[-1];
           ($temp_name,$suffix)=split('\|',$temp_name);
           $temp_name=~s/sd//g;
@@ -337,6 +335,34 @@ sub build_linux_device_list {
 }
 
 # Check the local configuration including determining disk mirroring
+
+# Set up tools directory, temp directory and script information
+# This is separate from check_local_config so that options like
+# -h, -V and -c work without creating directories or probing hardware
+
+sub init_local_config {
+  my $user_id=`id -u`;
+  my $home_dir=`echo \$HOME`;
+  my $dir_name=basename($script_name);
+  $tools_dir=dirname($0);
+  if ($tools_dir!~/[A-Za-z]/) {
+    $tools_dir=getcwd;
+  }
+  $tools_dir="$tools_dir/tools";
+  $script_info=search_script("Name");
+  $vendor_info=search_script("Vendor");
+  $packager_info=search_script("Packager");
+  $version_info=search_script("Version");
+  chomp($user_id);
+  chomp($home_dir);
+  if ($user_id=~/^0$/) {
+    $temp_dir="/var/log/$dir_name";
+  }
+  else {
+    $temp_dir="$home_dir/.$dir_name";
+  }
+  return;
+}
 
 sub check_local_config {
   my $i2o_command;
@@ -378,30 +404,10 @@ sub check_local_config {
   my $sasx36_test;
   my $zpool_name;
   my @zpool_list;
-  my $user_id=`id -u`;
-  my $home_dir=`echo \$HOME`;
-  my $dir_name=basename($script_name);
-  $tools_dir=dirname($0);
-  if ($tools_dir!~/[A-z]/) {
-    $tools_dir=getcwd;
+  if (! -d "$temp_dir") {
+    mkdir($temp_dir,0755);
   }
-  $tools_dir="$tools_dir/tools";
-  $vendor_info=search_script("Vendor");
-  $packager_info=search_script("Packager");
-  $version_info=search_script("Version");
-  chomp($user_id);
-  chomp($home_dir);
-  if ($user_id=~/^0$/) {
-    $temp_dir="/var/log/$dir_name";
-  }
-  else {
-    $temp_dir="$home_dir/.$dir_name";
-  }
-  if (! -e "$temp_dir") {
-    system("mkdir $temp_dir");
-  }
-  check_file_slurp();
-  if ($os_version=~/[L,l]inux/) {
+  if ($os_version=~/[Ll]inux/) {
     # Build device mappings
     if (-e "/proc/scsi/scsi") {
       build_linux_device_list();
@@ -436,7 +442,7 @@ sub check_local_config {
       system("cat /proc/rd/c0/current_status |grep -v October > $raidctl_output");
       @dac960_info=`cat $raidctl_output`;
       if (-e "$raidctl_output") {
-        system("rm $raidctl_output");
+        unlink($raidctl_output);
       }
       process_dac960_info();
     }
@@ -450,8 +456,11 @@ sub check_local_config {
     # Check for Adaptec
     if ((-e "$adaptec_proc/0")||(-e "$adaptec_proc/1")||(-e "$adaptec_proc/2")||(-e "/sys/module/aacraid/version")) {
       # If we have Adaptec check we have arcconf
-      $release_test=`cat /etc/redhat-release`;
-      chomp($release_test);
+      $release_test="";
+      if (-e "/etc/redhat-release") {
+        $release_test=`cat /etc/redhat-release`;
+        chomp($release_test);
+      }
       if ($release_test=~/release 5/) {
         $adaptec_command="/usr/local/bin/arcconfel5";
         $adaptec_tool="$tools_dir/arcconfel5";
@@ -460,9 +469,7 @@ sub check_local_config {
         $adaptec_command="/usr/local/bin/arcconf";
         $adaptec_tool="$tools_dir/arcconf";
       }
-      if (! -e "$adaptec_command") {
-        system("chmod +x $adaptec_command");
-      }
+      install_tool($adaptec_tool,$adaptec_command);
       if ($release_test=~/release 5/) {
           $adaptec_no="1";
           @adaptec_info=`cd /tmp ; $adaptec_command GETCONFIG $adaptec_no`;
@@ -487,8 +494,8 @@ sub check_local_config {
     }
     # Check for IPS (ServeRAID)
     if ((-e "$ips_string/0")||(-e "$ips_string/1")||(-e "$ips_string/2")) {
-      $command="grep 'Controller Type' |cut -f2 -d':' |awk '{print \$2}'";
       for ($counter=0; $counter<3 ; $counter++) {
+        $command="grep 'Controller Type' |cut -f2 -d':' |awk '{print \$2}'";
         $serveraid_no=$counter;
         $serveraid_no++;
         if (-e "$ips_string/$counter") {
@@ -518,13 +525,11 @@ sub check_local_config {
           }
           $ibmraid_command="/usr/local/bin/ipssend";
           $ibmraid_command="$ibmraid_command$ibmraid_test";
-          if (! -e "$ibmraid_command") {
-            $ibmraid_tool="$tools_dir/ipssend$ibmraid_test";
-            system("chmod +x $ibmraid_command");
-          }
+          $ibmraid_tool="$tools_dir/ipssend$ibmraid_test";
+          install_tool($ibmraid_tool,$ibmraid_command);
           if (-e "$ibmraid_command") {
             $ibmraid_test=1;
-            if ($serveraid_no gt 2) {
+            if ($serveraid_no > 2) {
               $command="$ibmraid_command getconfig 1";
             }
             else {
@@ -585,7 +590,7 @@ sub check_local_config {
         if ($module_test!~/mptctl/) {
           system("modprobe mptctl");
         }
-        if ($lsi_test=~/SAS106[4,8]/) {
+        if ($lsi_test=~/SAS106[48]/) {
           $lsi_command="/usr/local/bin/cfg1064";
           $tools_file="$tools_dir/cfg1064";
           $command="$lsi_command 0 DISPLAY";
@@ -596,8 +601,7 @@ sub check_local_config {
           $command="$lsi_command getstatus 1";
         }
         if (! -e "$lsi_command") {
-          get_ftp_file($tools_file,$lsi_command);
-          system("chmod +x $lsi_command");
+          install_tool($tools_file,$lsi_command);
         }
         if (-e "$lsi_command") {
           $lsi_test=1;
@@ -672,8 +676,8 @@ sub check_local_config {
               chomp($release_test);
               ($prefix,$release_test)=split('/',$release_test);
               ($release_test,$suffix)=split(' ',$release_test);
-              $release_test=~s/0//g;
-              if (($release_test ge 7)||($raidctl_version=~/2008/)) {
+              $release_test=~s/^0+//;
+              if (($release_test >= 7)||($raidctl_version=~/2008/)) {
                 if ($os_version=~/sparc/) {
                   if ($platform_test=~/T5220/) {
                     $controller_no="c1";
@@ -696,8 +700,8 @@ sub check_local_config {
                   }
                 }
                 if (-e "$raidctl_output") {
-                  system("rm $raidctl_output");
-                  system("touch $raidctl_output");
+                  unlink($raidctl_output);
+                  system("touch '$raidctl_output'");
                 }
                 # search through cfgadm ouput to get controller numbers
                 $raidctl_command="for i in `cfgadm -al |grep '^$controller_no' |awk '{print  \$1}' |grep dsk |cut -f2 -d'/'` ; do raidctl -l \$i >> $raidctl_output 2>&1 ; done";
@@ -728,7 +732,7 @@ sub check_local_config {
       chomp($sds_test);
       if ($sds_test=~/md/) {
         @sds_info=`$sds_command`;
-        $sds_test=@sds_info[0];
+        $sds_test=$sds_info[0];
         if ($sds_test=~/there are no existing databases|No such file or directory/) {
           $sds_test=0;
         }
@@ -867,12 +871,32 @@ sub search_script {
   return($result);
 }
 
-# Print version information
+# Install a bundled tool from the tools directory
+# Copies it to its run location if missing and makes it executable
 
-sub print_version {
-  print "\n";
-  print "$script_info v. $version_info [$packager_info]\n";
-  print "\n";
+sub install_tool {
+  my $source=$_[0];
+  my $target=$_[1];
+  if ((! -e "$target")&&(-e "$source")) {
+    system("cp '$source' '$target'");
+  }
+  if (-e "$target") {
+    chmod(0755,$target);
+  }
+  return;
+}
+
+# Print change log
+# The change log lives in CHANGELOG.md next to the script
+
+sub print_change_log {
+  my $change_file=dirname($script_name)."/CHANGELOG.md";
+  if (! -e "$change_file") {
+    print "Change log $change_file does not exist\n";
+    return;
+  }
+  @change_log=read_a_file($change_file);
+  print @change_log;
   return;
 }
 
@@ -1049,8 +1073,7 @@ sub process_h700_info {
   my $model="H700";
   if (! -e "$h700_command") {
     if (-e "$local_file") {
-      system("rpm -i $local_file");
-      system("rm -f $local_file");
+      system("rpm -i '$local_file'");
     }
   }
   @h700_info=`$h700_command -CfgDsply -aAll`;
@@ -1201,7 +1224,6 @@ sub process_zfs_info {
   my $prefix;
   my $fail_name;
   my @disk_list;
-  my $number;
   my $disk_record;
   my $disk_type;
   my $mirror_check=0;
@@ -1220,7 +1242,7 @@ sub process_zfs_info {
           if ($disk_record!~/mirror/) {
             ($temp_name,$disk_status)=split(" ",$disk_record);
             $temp_name=~s/ //g;
-            if ($disk_name=~/[A-z]/) {
+            if ($disk_name=~/[A-Za-z]/) {
               if ($disk_name!~/$temp_name/) {
                 $disk_name="$disk_name,$temp_name";
               }
@@ -1285,7 +1307,7 @@ sub get_zpool_name {
   $disk_name=~s/\/dev\/dsk\///g;
   foreach $record (@zpool_list) {
     chomp($record);
-    if ($record=~/[A-z]/) {
+    if ($record=~/[A-Za-z]/) {
       $tester=`zpool status |grep '$disk_name'`;
       chomp($tester);
       if ($tester=~/$disk_name/) {
@@ -1403,12 +1425,12 @@ sub process_raidctl_info {
         $file_system="";
         $disk_status=~s/^\ //g;
         $tester=0;
-        if (($fs_list[0]!~/[A-z]/)||($fs_list[1]!~/[A-z]/)) {
+        if (($fs_list[0]!~/[A-Za-z]/)||($fs_list[1]!~/[A-Za-z]/)) {
           $zfs_command="/usr/sbin/zfs";
           if (-e "$zfs_command") {
             $zpool_name="";
             $zpool_name=get_zpool_name($disk_name);
-            if ($zpool_name=~/[A-z]/) {
+            if ($zpool_name=~/[A-Za-z]/) {
               $file_system=get_zfs_file_system($zpool_name);
             }
           }
@@ -1578,7 +1600,7 @@ sub process_sds_info {
             if ($resync_string=~/progress/) {
               ($prefix,$resync_string)=split(':',$resync_string);
               $resync_string=~s/ //g;
-              $resync_string=~s/[A-z]//g;
+              $resync_string=~s/[A-Za-z]//g;
               $resync_text="$disk_status [$resync_string]";
             }
           }
@@ -1769,7 +1791,7 @@ sub process_ibmraid_info {
         chomp($record);
         ($prefix,$suffix)=split(/\:/,$record);
         if ($prefix=~/$device_name/) {
-          if ($disk_name!~/[A-z]/) {
+          if ($disk_name!~/[A-Za-z]/) {
             $disk_name="$prefix";
             $file_system="$suffix";
           }
@@ -1924,7 +1946,7 @@ sub process_adaptec_info {
         chomp($record);
         ($prefix,$suffix)=split(/\:/,$record);
         if ($prefix=~/$device_name/) {
-          if ($disk_name!~/[A-z]/) {
+          if ($disk_name!~/[A-Za-z]/) {
             $disk_name="$prefix";
             $file_system="$suffix";
           }
@@ -1971,7 +1993,6 @@ sub process_freebsd_info {
   my $disk_name;
   my $suffix;
   my $disk_status;
-  my $file_system;
   foreach $record (@freebsd_info) {
     chomp($record);
     if ($record=~/DASD/) {
@@ -2074,8 +2095,6 @@ sub process_fstab {
   my $prefix;
   my $suffix;
   my $record;
-  my $disk_name;
-  my $file_system;
   my $delete;
   my $raw_device;
   my $lvm_name;
@@ -2093,7 +2112,7 @@ sub process_fstab {
     system("/usr/sbin/pvs > $lvm_file");
     $lvm_name=`cat $lvm_file |grep lvm |head -$number |tail -1 |awk '{print \$2}'`;
     chomp($lvm_name);
-    system("rm $lvm_file");
+    unlink($lvm_file);
     if ($lvm_name!~/lvm2/) {
       @file_list=`cat /etc/fstab | grep -v '^#' |grep '$lvm_name' |grep dev|awk '{print \$1":"\$2}' |sort -k 1`;
     }
@@ -2114,7 +2133,7 @@ sub process_fstab {
     if ($prefix=~/Vol/) {
       ($prefix,$delete)=split('\/LogVol',$prefix);
     }
-    if ($disk_name!~/[A-z]/) {
+    if ($disk_name!~/[A-Za-z]/) {
       $disk_name="$prefix";
       $file_system="$suffix";
     }
@@ -2169,7 +2188,7 @@ sub get_controller_no {
   if ($release_test=~/10/) {
     @disk_nos=`prtconf -v`;
     for ($counter=0; $counter<@disk_nos; $counter++) {
-      $record=@disk_nos[$counter];
+      $record=$disk_nos[$counter];
       chomp($record);
       if ($record=~/#$instance_no$/) {
         $tester=1;
@@ -2186,7 +2205,7 @@ sub get_controller_no {
     if ($release_test=~/8|9/) {
       @disk_nos=`prtconf -v`;
       for ($counter=0; $counter<@disk_nos; $counter++) {
-        $record=@disk_nos[$counter];
+        $record=$disk_nos[$counter];
         chomp($record);
         if ($record=~/#$instance_no$/) {
           $tester=1;
@@ -2229,7 +2248,7 @@ sub get_controller_no {
       $number=$#disk_nos+1;
       @controller_nos=`ls -l /dev/rdsk/*s0 |awk '{print \$9}' |cut -f4 -d'/' |tail -$number`;
       for ($counter=0; $counter<@disk_nos; $counter++) {
-        $record=@disk_nos[$counter];
+        $record=$disk_nos[$counter];
         chomp($record);
         if ($record=~/^$disk_no$/) {
           $disk_no=$controller_nos[$counter];
@@ -2263,7 +2282,7 @@ sub get_messages_info {
   my @dmesgs;
   my $date_string;
   my $record;
-  my $disk_status;
+  my $disk_status="WARNING";
   my $prefix;
   my $suffix;
   my $bad_disk;
@@ -2273,7 +2292,6 @@ sub get_messages_info {
   my $disk_no;
   my $file_no;
   my $list_no=0;
-  my $file_system;
   my $mdconf_file;
   my $marker=0;
   my $month_string;
@@ -2282,7 +2300,7 @@ sub get_messages_info {
   my $command;
   my @mdlist;
   my $messages_file;
-  my $disk_status="WARNING";
+  my $read_command;
   my $disk_group=0;
   my $manual_mount=0;
   $date_string=`date |awk '{print \$2" "\$3" "\$4}'`;
@@ -2318,15 +2336,25 @@ sub get_messages_info {
   else {
     if ($os_version=~/Linux|linux/) {
       $messages_file="/var/log/messages";
+      $read_command="cat $messages_file";
+      if (! -e "$messages_file") {
+        # Systems using only the journal have no messages file
+        if (-x "/usr/bin/journalctl") {
+          $read_command="/usr/bin/journalctl -k --no-pager";
+        }
+        else {
+          return;
+        }
+      }
       if ($option{'A'}) {
-        $command="cat $messages_file |egrep 'SCSI|I/O' |grep -i 'error' |cut -f5 -d':' |sort |uniq";
+        $command="$read_command |egrep 'SCSI|I/O' |grep -i 'error' |cut -f5 -d':' |sort |uniq";
       }
       else {
         if ($option{'F'}) {
-          $command="cat $messages_file |egrep 'SCSI|I/O' |grep -i 'error' |grep '^$day_string' |cut -f5 -d':' |sort |uniq";
+          $command="$read_command |egrep 'SCSI|I/O' |grep -i 'error' |grep '^$day_string' |cut -f5 -d':' |sort |uniq";
         }
         else {
-          $command="cat $messages_file |egrep 'SCSI|I/O' |grep -i 'error' |grep '^$date_string' |cut -f5 -d':' |sort |uniq";
+          $command="$read_command |egrep 'SCSI|I/O' |grep -i 'error' |grep '^$date_string' |cut -f5 -d':' |sort |uniq";
         }
       }
       @dmesgs=`$command`;
@@ -2335,7 +2363,7 @@ sub get_messages_info {
   foreach $bad_disk (@dmesgs) {
     chomp($bad_disk);
     if ($os_version=~/Linux|linux/) {
-      if ($bad_disk=~/I\/O [E,e]rror/) {
+      if ($bad_disk=~/I\/O [Ee]rror/) {
         ($prefix,$bad_disk,$suffix)=split(",",$bad_disk);
         $bad_disk=~s/dev//g;
         $bad_disk=~s/ //g;
@@ -2368,7 +2396,7 @@ sub get_messages_info {
             $mirror_type="fs";
             if ($bad_disk=~/c/) {
               ($file_system,$manual_mount)=get_file_system($bad_disk,$mirror_type);
-              add_to_bad_disk_list($disk_no,$disk_status,$file_system);
+              add_to_bad_disk_list($bad_disk,$disk_status,$file_system);
             }
         }
         else {
@@ -2470,14 +2498,14 @@ sub get_file_system {
       $disk_no=get_dynapath_device($disk_no);
     }
     @file_info=`grep -i '$disk_no' /etc/fstab |grep -v '^#' |awk '{print \$2}'`;
-    if ($file_info[0]!~/[A-z]|[0-9]|\//) {
+    if ($file_info[0]!~/[A-Za-z]|[0-9]|\//) {
       $pvscan=`pvscan |grep '$disk_no' |awk '{print \$4}'`;
       chomp($pvscan);
       if ($pvscan=~/^Vol/) {
         @file_info=`egrep -i '$disk_no|$pvscan' /etc/fstab |grep -v '^#' |awk '{print \$2}'`;
       }
     }
-    if ($file_info[0]!~/[A-z]|[0-9]|\//) {
+    if ($file_info[0]!~/[A-Za-z]|[0-9]|\//) {
       if (-e "/dev/disk/by-id") {
         $id_no=`ls -l /dev/disk/by-id/scsi* |grep '$disk_no' |awk '{print \$9}' |head -1`;
         chomp($id_no);
@@ -2486,10 +2514,10 @@ sub get_file_system {
       }
     }
   }
-  if ($file_info[0]!~/[A-z]|[0-9]|\//) {
+  if ($file_info[0]!~/[A-Za-z]|[0-9]|\//) {
     @file_info=`df |grep -i '$disk_no' |awk '{print \$6}'`;
   }
-  if ($file_info[0]=~/[A-z]|[0-9]|\//) {
+  if ($file_info[0]=~/[A-Za-z]|[0-9]|\//) {
     $manual_mount=1;
   }
   foreach $file_name (@file_info) {
@@ -2498,9 +2526,9 @@ sub get_file_system {
     if ($file_name!~/\//) {
       $file_name="swap";
     }
-    if ($file_name=~/[0-9]|[A-z]|\//) {
+    if ($file_name=~/[0-9]|[A-Za-z]|\//) {
       if ($file_system!~/$file_name/) {
-        if ($file_system=~/[0-9]|[A-z]|\//) {
+        if ($file_system=~/[0-9]|[A-Za-z]|\//) {
           $file_system="$file_system, $file_name";
         }
         else {
@@ -2509,7 +2537,7 @@ sub get_file_system {
       }
     }
   }
-  if ($file_info[0]!~/[A-z]|[0-9]|\//) {
+  if ($file_info[0]!~/[A-Za-z]|[0-9]|\//) {
     $file_system="None";
   }
   return($file_system,$manual_mount);
@@ -2526,7 +2554,7 @@ sub process_disk_info {
   my $tester;
   my $string_test=0;
   chomp($hostname);
-  if (($bad_disk_list[0]=~/[A-z]|[0-9]/)||($bad_disk_list[1]=~/[A-z]|[0-9]/)) {
+  if (($bad_disk_list[0]=~/[A-Za-z]|[0-9]/)||($bad_disk_list[1]=~/[A-Za-z]|[0-9]/)) {
     $string_test=1;
   }
   if (($string_test eq 1)&&($verbose ne 1)) {
@@ -2536,16 +2564,19 @@ sub process_disk_info {
     }
     if (($option{'m'})||($option{'s'})||($option{'h'})) {
       $output="$temp_dir/mdoutput";
+      if (! -d "$temp_dir") {
+        mkdir($temp_dir,0755);
+      }
       if (-e "$output") {
-        system("rm $output");
-        system("touch $output");
+        unlink($output);
+        system("touch '$output'");
       }
       open(STDOUT,">$output");
       print STDOUT "Disk Errors:\n";
       print STDOUT "\n";
       foreach $record (@bad_disk_list) {
         ($disk_name,$disk_status,$file_system)=split(/\|/,$record);
-        if ($disk_name=~/^[A-z]/) {
+        if ($disk_name=~/^[A-Za-z]/) {
           $disk_status=~s/Optimal/OK/g;
           print STDOUT "Disk:     $disk_name\n";
           print STDOUT "Status:   $disk_status\n";
@@ -2560,39 +2591,39 @@ sub process_disk_info {
         }
         else {
           if ((-e "$date_file")&&(!$option{'t'})) {
-            $tester=`diff $output $date_file`;
-            if ($tester=~/[A-z]/) {
-              system("rm $date_file");
+            $tester=`diff '$output' '$date_file'`;
+            if ($tester=~/[A-Za-z]/) {
+              unlink($date_file);
             }
           }
           if ((!-e "$date_file")||($option{'t'})) {
             $tester=`cat $output |grep -v '^Disk Errors'`;
-            if ($tester=~/[A-z]/) {
-              if ($os_version=~/[L,l]inux/) {
-                system("cat $output |mail -s\"$script_name: $hostname\" $email_address");
+            if ($tester=~/[A-Za-z]/) {
+              if ($os_version=~/[Ll]inux/) {
+                system("cat '$output' |mail -s '$script_name: $hostname' '$email_address'");
               }
               else {
-                system("cat $output |mailx -s\"$script_name: $hostname\" $email_address");
+                system("cat '$output' |mailx -s '$script_name: $hostname' '$email_address'");
               }
-              system("cp $output $date_file");
+              system("cp '$output' '$date_file'");
             }
           }
         }
       }
       else {
         if ($option{'s'}) {
-          system("/usr/bin/logger -f $output -p local4.notice");
+          system("/usr/bin/logger -f '$output' -p local4.notice");
         }
       }
       if (-e "$output") {
-        system("rm $output");
+        unlink($output);
       }
     }
     else {
       print "Disk Errors:\n\n";
       foreach $record (@bad_disk_list) {
-        $disk_status=~s/Optimal/OK/g;
         ($disk_name,$disk_status,$file_system)=split(/\|/,$record);
+        $disk_status=~s/Optimal/OK/g;
         print "Disk:  $disk_name\n";
         print "Status:  $disk_status\n";
         print "Mount: $file_system\n";
